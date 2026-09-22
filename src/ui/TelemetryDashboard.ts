@@ -1,7 +1,7 @@
-import { appStore } from '../../state/Store';
-import type { CompressionResult, SourceImage } from '../../types';
-import { $ } from '../../utils/dom';
-import { formatBytes, formatDimensions, formatLatency, formatPercent } from '../../utils/formatters';
+import { appStore } from '../state/Store';
+import type { CompressionResult, SourceImage } from '../types';
+import { $ } from '../utils/dom';
+import { formatBytes, formatDimensions, formatLatency, formatPercent } from '../utils/formatters';
 
 export class TelemetryDashboard {
   private originalSizeEl: HTMLElement;

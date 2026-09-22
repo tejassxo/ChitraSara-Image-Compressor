@@ -19,7 +19,6 @@ export function calculateTargetDimensions(
 
   let targetWidth = source.width;
   let targetHeight = source.height;
-  const aspectRatio = source.width / source.height;
 
   if (options.mode === 'scale' && options.scalePercent !== undefined) {
     const factor = clamp(options.scalePercent, 1, 500) / 100;
