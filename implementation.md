@@ -177,30 +177,40 @@ interface UserRecipe {
 
 ---
 
-## 📅 6. Phased Implementation Milestones
+## 📅 6. Phased Implementation Milestones (5-Phase Roadmap)
 
-- [ ] **Milestone 1: Zero-Bloat Vanilla Setup & Adaptive Hardware Governor**
-  - Ultra-lightweight Vite project setup with pure Vanilla JS/CSS (no heavy framework overhead).
-  - Implement `HardwareGovernor` (`navigator.deviceMemory`, core count, low-power mode detector).
-  - Implement CSS design tokens with hardware-accelerated transforms and glassmorphism/flat fallback.
-- [ ] **Milestone 2: Memory-Safe Compression Core & Worker Farm**
-  - Web Worker engine using `OffscreenCanvas` with automatic hidden DOM canvas fallback.
-  - Step-down bitmap decoding (`createImageBitmap` scaling) and aggressive memory garbage cleanup (`.close()`, `revokeObjectURL()`).
-  - Format converters (WebP, AVIF, JPEG, PNG) and real-time statistics.
-- [ ] **Milestone 3: Target File Size Binary Search Solver**
-  - Auto-tuner to hit target file sizes (e.g. $\le 50\text{ KB}$, $\le 200\text{ KB}$) within 5 iterations.
-- [ ] **Milestone 4: Memory-Efficient Batch Queue & Streaming Zip**
-  - Adaptive batch queue (1-at-a-time on low-RAM, multi-threaded on desktop).
-  - Low-memory 200px micro-thumbnail UI list.
-  - Client-side zero-server ZIP creation via `JSZip`.
-- [ ] **Milestone 5: Flagship Novelties (Chroma Delta Heatmap & Split Loupe)**
-  - Split-slider comparison viewer with 200%–800% magnifying loupe.
-  - Real-time Perceptual Delta Heatmap canvas shader to visualize compression artifacts.
-- [ ] **Milestone 6: Pareto Sweet-Spot Analyzer & Dev Export Suite**
-  - Fast 5-point SSIM sampler plotting the Rate-Distortion curve with "Apply Sweet Spot" button.
-  - Clipboard copy-out, Base64 generator, and responsive `<picture>` code exporter.
-- [ ] **Milestone 7: Custom Recipes, Watermark Studio & Offline PWA**
-  - LocalStorage recipe manager, custom EXIF/watermark tool, PWA offline manifest + Service Worker (<30KB footprint).
+- [x] **Phase 1: Foundation + Core Compression Engine** ✅ *(Completed 2026-09-22)*
+  - Pure Vanilla TypeScript architecture with 0 runtime dependencies.
+  - `HardwareGovernor` detecting platform limits, RAM, cores, and setting low-power DOM flags.
+  - `CompressionEngine` with `createImageBitmap` decoding, `OffscreenCanvas` & DOM canvas fallbacks.
+  - Deterministic lifecycle cleanup (`close()`, `revokeObjectURL()`, canvas zeroing, `AbortController` cancellation).
+  - FormatProber dynamic 1x1 test canvas probe for AVIF, WebP, JPEG, PNG.
+  - Automated Vitest test suite: 34 tests passing across 5 suites.
+  - Production bundle budget: **9.02 KB gzipped** (JS + CSS combined), strictly $\le 30\text{ KB}$ budget.
+  - Git cleanliness: `node_modules` strictly excluded via `.gitignore` and untracked.
+
+- [ ] **Phase 2: Concurrency Workers + Target Size Auto-Solver + Batch Processing Queue**
+  - Dedicated Web Worker for off-main-thread rasterization and encoding.
+  - Adaptive Concurrency Worker Pool governed by hardware capabilities.
+  - Target File Size Binary Search Auto-Solver ($Q \in [0.05, 0.95]$ with dimension step-down).
+  - Multi-image FIFO batch queue with per-item progress telemetry and memory-capped micro-previews.
+
+- [ ] **Phase 3: Visual Inspection Studio (Heatmap + Loupe + SSIM + Sweet Spot)**
+  - Real-time Chroma Delta Heatmap (pixel difference amplifier shader).
+  - Interactive split-screen comparison slider with 2x–8x magnification loupe.
+  - 5-point SSIM Pareto curve rate-distortion sampler with "Apply Sweet Spot" auto-optimizer.
+
+- [ ] **Phase 4: Creator Hub & Portability (ZIP + Clipboard + Recipes + Privacy)**
+  - Client-side zero-server ZIP export via `JSZip`.
+  - Seamless system clipboard in/out (`Ctrl+V` paste, `Ctrl+C` copy).
+  - Dev-Ready generator: Base64 Data-URI, responsive `<picture>` markup, CSS background rule.
+  - User custom recipes & profile persistence in `localStorage`.
+  - Privacy scrubbing: strip GPS coordinates & camera serials while preserving color profiles.
+
+- [ ] **Phase 5: Enterprise Polish (PWA + Accessibility + Audits + Performance)**
+  - Service Worker offline caching and PWA manifest.
+  - Keyboard-first command palette (`Ctrl+K`).
+  - Full WCAG 2.1 AA accessibility audit, screen reader live regions, and final performance pass.
 
 ---
 
@@ -210,3 +220,5 @@ interface UserRecipe {
 * **[2026-09-22]:** Initial architecture drafted (Client-side, privacy-first, target size solver, batch queue).
 * **[2026-09-22]:** Expanded with Flagship Novelties (Chroma Delta Heatmap, Pareto Sweet-Spot Optimizer, Dev Export Suite) and Personal Customizability (Saved Recipes, Theme Engine, Command Palette).
 * **[2026-09-22]:** Added Universal Runnability & Low-End Device Architecture: Zero-bloat Vanilla JS/CSS (<35KB gzipped), Adaptive Hardware & Memory Governor to eliminate OOM crashes on low-RAM devices, Step-Down Bitmap decoding, and CSS Low-Power GPU fallbacks.
+* **[2026-09-22]:** Phase 1 implemented, built, and verified. 34 tests passing, 9.02 KB gzipped bundle, zero runtime dependencies, git repository sanitized with node_modules strictly ignored.
+
