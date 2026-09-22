@@ -1,16 +1,16 @@
-import { CompressionEngine } from '../../core/engine/CompressionEngine';
-import { HardwareGovernor } from '../../core/governor/HardwareGovernor';
-import { IngestionService } from '../../services/IngestionService';
-import { appStore, type AppState } from '../../state/Store';
-import { $ } from '../../utils/dom';
+import { CompressionEngine } from '../core/engine/CompressionEngine';
+import { HardwareGovernor } from '../core/governor/HardwareGovernor';
+import { IngestionService } from '../services/IngestionService';
+import { appStore, type AppState } from '../state/Store';
+import { $ } from '../utils/dom';
 import { ControlPanel } from './ControlPanel';
 import { PreviewViewport } from './PreviewViewport';
 import { TelemetryDashboard } from './TelemetryDashboard';
 
 export class AppController {
-  private controlPanel: ControlPanel;
-  private telemetryDashboard: TelemetryDashboard;
-  private previewViewport: PreviewViewport;
+  public readonly controlPanel: ControlPanel;
+  public readonly telemetryDashboard: TelemetryDashboard;
+  public readonly previewViewport: PreviewViewport;
   private dropzoneSection: HTMLElement;
   private studioSection: HTMLElement;
   private hardwareTextEl: HTMLElement;

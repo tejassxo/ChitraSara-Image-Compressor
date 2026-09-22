@@ -1,8 +1,8 @@
-import type { SupportedMimeType } from '../../config/constants';
-import { FormatProber } from '../../core/engine/FormatProber';
-import { appStore } from '../../state/Store';
-import type { CompressionOptions, FormatSupportInfo } from '../../types';
-import { $, $$ } from '../../utils/dom';
+import type { SupportedMimeType } from '../config/constants';
+import { FormatProber } from '../core/engine/FormatProber';
+import { appStore } from '../state/Store';
+import type { CompressionOptions, FormatSupportInfo } from '../types';
+import { $, $$ } from '../utils/dom';
 
 export class ControlPanel {
   private formatBtns: HTMLButtonElement[] = [];

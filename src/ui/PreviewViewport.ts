@@ -1,7 +1,7 @@
-import { appStore } from '../../state/Store';
-import type { CompressionResult, SourceImage } from '../../types';
-import { $, $$ } from '../../utils/dom';
-import { formatDimensions } from '../../utils/formatters';
+import { appStore } from '../state/Store';
+import type { CompressionResult, SourceImage } from '../types';
+import { $, $$ } from '../utils/dom';
+import { formatDimensions } from '../utils/formatters';
 
 export class PreviewViewport {
   private previewImg: HTMLImageElement;
@@ -22,10 +22,10 @@ export class PreviewViewport {
 
   private bindEvents(): void {
     const tabs = $$<HTMLButtonElement>('.preview-tabs .preview-tab');
-    tabs.forEach((tab) => {
+    tabs.forEach((tab: HTMLButtonElement) => {
       tab.addEventListener('click', () => {
         const view = tab.getAttribute('data-view') as 'compressed' | 'original';
-        tabs.forEach((t) => t.classList.remove('active'));
+        tabs.forEach((t: HTMLButtonElement) => t.classList.remove('active'));
         tab.classList.add('active');
         appStore.setState({ activePreviewTab: view });
         this.renderCurrentView();

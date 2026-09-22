@@ -13,8 +13,8 @@ interface ExtendedNavigator extends Partial<Navigator> {
  * Pure evaluation function enabling comprehensive mock testing
  */
 export function evaluateHardwareProfile(
-  nav: ExtendedNavigator = typeof navigator !== 'undefined' ? navigator : {},
-  win: any = typeof window !== 'undefined' ? window : {}
+  nav: ExtendedNavigator = typeof navigator !== 'undefined' ? navigator : (typeof globalThis !== 'undefined' && 'navigator' in globalThis ? (globalThis as any).navigator : {}),
+  win: any = typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : {})
 ): HardwareCapabilities {
   const deviceMemoryGB = typeof nav.deviceMemory === 'number' ? nav.deviceMemory : undefined;
   const hardwareConcurrency = typeof nav.hardwareConcurrency === 'number' && nav.hardwareConcurrency > 0

@@ -1,4 +1,5 @@
 import type { SupportedMimeType } from '../config/constants';
+export type { SupportedMimeType };
 
 export type HardwareProfile = 'LOW' | 'BALANCED' | 'HIGH';
 

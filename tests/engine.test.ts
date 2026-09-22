@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { CompressionEngine } from '../src/core/engine/CompressionEngine';
+import { HardwareGovernor } from '../src/core/governor/HardwareGovernor';
 import { IngestionService } from '../src/services/IngestionService';
 import type { CompressionOptions } from '../src/types';
 
@@ -87,7 +88,7 @@ describe('CompressionEngine & IngestionService Lifecycle & Reliability', () => {
       }));
 
       // Mock OffscreenCanvas whose convertToBlob throws an internal encoding error
-      vi.stubGlobal('OffscreenCanvas', class {
+      class MockOffscreenCanvas {
         width = 1000;
         height = 1000;
         getContext() {
@@ -97,10 +98,13 @@ describe('CompressionEngine & IngestionService Lifecycle & Reliability', () => {
             imageSmoothingQuality: 'high',
           };
         }
-        convertToBlob() {
+        async convertToBlob(): Promise<Blob> {
           throw new Error('Fatal GPU Memory Allocation Failure in convertToBlob');
         }
-      });
+      }
+
+      vi.stubGlobal('OffscreenCanvas', MockOffscreenCanvas);
+      HardwareGovernor.resetCache();
 
       const fakeImage = new Blob([new Uint8Array(500)], { type: 'image/png' });
       const options: CompressionOptions = {
@@ -117,7 +121,9 @@ describe('CompressionEngine & IngestionService Lifecycle & Reliability', () => {
       expect(closeSpy).toHaveBeenCalled();
 
       vi.unstubAllGlobals();
+      HardwareGovernor.resetCache();
       revokeSpy.mockRestore();
     });
   });
+
 });
