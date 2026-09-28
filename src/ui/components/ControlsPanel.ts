@@ -533,10 +533,16 @@ export class ControlsPanel {
 
     // 5. Target Size Quick Presets
     const presets = this.element.querySelectorAll<HTMLButtonElement>('.quick-size-pills .pill-preset');
+    const customInput = this.element.querySelector<HTMLInputElement>('#custom-size-input');
+    const customUnit = this.element.querySelector<HTMLSelectElement>('#custom-size-unit');
+
     presets.forEach((preset) => {
       preset.addEventListener('click', () => {
         presets.forEach((p) => p.classList.remove('active'));
         preset.classList.add('active');
+        
+        if (customInput) customInput.value = ''; // Clear custom input
+
         const bytes = parseInt(preset.getAttribute('data-bytes') || '102400', 10);
         appStore.updateOptions({ targetBytes: bytes });
         if (appStore.getState().autoProcess) {
@@ -546,9 +552,6 @@ export class ControlsPanel {
     });
 
     // Custom Target Size Input
-    const customInput = this.element.querySelector<HTMLInputElement>('#custom-size-input');
-    const customUnit = this.element.querySelector<HTMLSelectElement>('#custom-size-unit');
-
     const updateCustomSize = () => {
       const num = parseFloat(customInput?.value || '0');
       if (num > 0) {
@@ -562,7 +565,7 @@ export class ControlsPanel {
       }
     };
 
-    customInput?.addEventListener('change', updateCustomSize);
+    customInput?.addEventListener('input', updateCustomSize);
     customUnit?.addEventListener('change', updateCustomSize);
 
     // 6. Auto Process Toggle & Manual Button
