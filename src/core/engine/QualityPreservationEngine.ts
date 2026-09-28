@@ -102,7 +102,7 @@ export class QualityPreservationEngine {
     let resizingStrategy: ResizingStrategy = 'none';
     if (isResizingNecessary) {
       const downscaleFactor = origDims.width / safeDimensions.width;
-      if (downscaleFactor > 2.0 && !caps.isLowEndDevice) {
+      if (downscaleFactor > 2.0 && caps.profile !== 'LOW') {
         resizingStrategy = 'stepped';
       } else {
         resizingStrategy = 'direct';

@@ -44,12 +44,12 @@ export class CanvasRasterizer {
     // Extract source dimensions to determine if stepped downscaling is needed
     let srcW = dimensions.width;
     let srcH = dimensions.height;
-    if ('naturalWidth' in source && typeof source.naturalWidth === 'number' && source.naturalWidth > 0) {
-      srcW = source.naturalWidth;
-      srcH = source.naturalHeight;
-    } else if ('width' in source && typeof source.width === 'number' && source.width > 0) {
-      srcW = source.width;
-      srcH = source.height;
+    if ('naturalWidth' in source && typeof (source as HTMLImageElement).naturalWidth === 'number' && (source as HTMLImageElement).naturalWidth > 0) {
+      srcW = (source as HTMLImageElement).naturalWidth;
+      srcH = (source as HTMLImageElement).naturalHeight;
+    } else if ('width' in source && typeof (source as { width: unknown }).width === 'number' && (source as { width: number }).width > 0) {
+      srcW = (source as { width: number }).width;
+      srcH = (source as { height: number }).height;
     }
 
     const downscaleFactor = Math.max(srcW / dimensions.width, srcH / dimensions.height);
