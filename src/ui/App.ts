@@ -134,18 +134,25 @@ export class App {
 
   private handleFiles(files: File[]): void {
     if (files.length === 0) return;
+    announceA11y(`Ingesting ${files.length} image file${files.length > 1 ? 's' : ''}`);
     BatchActions.enqueueFiles(files);
   }
 
   private handleSelectItem(item: import('../types').BatchItem): void {
     appStore.setState({ activeBatchItemId: item.id });
-    IngestionService.ingestFile(item.file).then((src) => {
-      appStore.setState({
-        sourceImage: src,
-        compressionResult: item.result,
+    IngestionService.ingestFile(item.file)
+      .then((src) => {
+        appStore.setState({
+          sourceImage: src,
+          compressionResult: item.result,
+        });
+        this.singlePreview.update(src, item.result);
+      })
+      .catch((err: unknown) => {
+        const msg = err instanceof Error ? err.message : String(err);
+        appStore.setState({ error: msg });
+        announceA11y(`Error loading file: ${msg}`);
       });
-      this.singlePreview.update(src, item.result);
-    });
   }
 
   private handleReset(): void {
@@ -211,8 +218,26 @@ export class App {
         if (state.error) {
           errorBanner.textContent = state.error;
           errorBanner.classList.remove('hidden');
+          announceA11y(`Alert: ${state.error}`);
         } else {
           errorBanner.classList.add('hidden');
+        }
+      }
+
+      // Success announcement
+      if (state.compressionResult && state.compressionResult !== prevState.compressionResult) {
+        announceA11y(
+          `Compression complete: ${state.compressionResult.filename}. Output size: ${Math.round(state.compressionResult.outputSize / 1024)} KB.`
+        );
+      }
+    });
+
+    window.addEventListener('keydown', (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        const eb = this.container.querySelector<HTMLElement>('#error-banner');
+        if (eb && !eb.classList.contains('hidden')) {
+          eb.classList.add('hidden');
+          appStore.setState({ error: null });
         }
       }
     });
