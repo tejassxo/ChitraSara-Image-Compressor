@@ -15,5 +15,7 @@
     "vite": "^6.0.0",
     "vitest": "^3.0.0"
   },
-  "dependencies": {}
+  "dependencies": {
+    "@vercel/speed-insights": "^2.0.0"
+  }
 }
