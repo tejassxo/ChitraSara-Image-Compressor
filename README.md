@@ -243,7 +243,7 @@ npm run build:check
 *“Engineered for absolute fidelity, zero bloat, and uncompromising privacy.”*
 
 [![GitHub](https://img.shields.io/badge/GitHub-@tejassxo-181717?style=flat-square&logo=github)](https://github.com/tejassxo)
-[![Portfolio](https://img.shields.io/badge/Portfolio-tejassxo-000000?style=flat-square&logo=safari)](https://github.com/tejassxo)
+[![Portfolio](https://img.shields.io/badge/Portfolio-mtejasyadav.vercel.app-000000?style=flat-square&logo=vercel)](https://mtejasyadav.vercel.app)
 [![MIT License](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
 
 © 2026 **M TEJAS YADAV**. All rights reserved.

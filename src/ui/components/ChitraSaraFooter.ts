@@ -18,7 +18,7 @@ export const CHITRASARA_FOOTER_CONFIG: FooterConfig = {
   brandName: 'ChitraSara',
   brandSubtitle: 'Image Optimization Studio',
   githubUrl: 'https://github.com/tejassxo',
-  portfolioUrl: 'https://github.com/tejassxo',
+  portfolioUrl: 'https://mtejasyadav.vercel.app',
   creatorName: 'M TEJAS YADAV',
 };
 
