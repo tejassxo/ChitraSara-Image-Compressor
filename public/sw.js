@@ -1,7 +1,7 @@
-// OptiPulse Studio Service Worker (PWA Offline Shell)
+// ChitraSara Service Worker (PWA Offline Shell)
 // Privacy Guarantee: Caches ONLY static application assets. Never intercepts or stores user image blobs.
 
-const CACHE_NAME = 'optipulse-shell-v1';
+const CACHE_NAME = 'chitrasara-v1';
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',

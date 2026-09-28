@@ -1,7 +1,7 @@
 {
-  "name": "OptiPulse Studio | Client-Side Image Optimizer",
-  "short_name": "OptiPulse",
-  "description": "100% client-side privacy-first image compressor, format converter, and target-size solver powered by Web Workers.",
+  "name": "ChitraSara — Image Optimization Studio",
+  "short_name": "ChitraSara",
+  "description": "A privacy-first, client-side image compressor and visual optimization studio for fast compression, conversion, inspection, and developer workflows.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0F172A",
