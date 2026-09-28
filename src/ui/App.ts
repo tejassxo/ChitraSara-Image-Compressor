@@ -8,6 +8,7 @@ import { appStore, type AppState } from '../state/store';
 import { BatchActions } from '../state/actions';
 import { CompressionEngine } from '../core/engine/CompressionEngine';
 import { IngestionService } from '../services/ingestion';
+import { announceA11y } from '../utils/a11y';
 
 export class App {
   private container: HTMLElement;
