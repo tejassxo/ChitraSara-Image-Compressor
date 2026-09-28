@@ -15,9 +15,27 @@ export interface ResizeOptions {
   maxWidth?: number;           // e.g. 1920
   maxHeight?: number;          // e.g. 1080
   maintainAspectRatio: boolean;
+  preventUpscale?: boolean;    // Default: true (never upscale unless explicitly requested)
+  allowUpscale?: boolean;
 }
 
-export type CompressionMode = 'quality' | 'targetSize';
+export type CompressionMode = 'quality' | 'targetSize' | 'lossless';
+
+export type FidelityProfile = 'maxFidelity' | 'balanced' | 'maxCompression' | 'targetSize' | 'lossless';
+
+export interface FidelityMetrics {
+  ssim: number;
+  psnr: number;
+  meanDelta: number;
+  maxDelta: number;
+  isAcceptable: boolean;
+}
+
+export interface ValidationResult {
+  isValid: boolean;
+  errors: string[];
+  warnings: string[];
+}
 
 export interface CompressionOptions {
   format: SupportedMimeType | 'original';
@@ -25,6 +43,9 @@ export interface CompressionOptions {
   resize: ResizeOptions;
   mode?: CompressionMode;
   targetBytes?: number;
+  preventUpscale?: boolean;
+  preserveAlpha?: boolean;
+  stripMetadata?: boolean;
   signal?: AbortSignal;
 }
 
@@ -42,6 +63,12 @@ export interface CompressionResult {
   filename: string;
   iterationsCount?: number;
   downscaled?: boolean;
+  fidelityMetrics?: FidelityMetrics;
+  validationResult?: ValidationResult;
+  targetAchieved?: boolean;
+  impossibleTarget?: boolean;
+  targetMessage?: string;
+  isLossless?: boolean;
 }
 
 export interface SourceImage {
@@ -50,6 +77,9 @@ export interface SourceImage {
   dimensions: ImageDimensions;
   size: number;
   type: SupportedMimeType;
+  hasAlpha?: boolean;
+  orientation?: number;
+  aspectRatio?: number;
 }
 
 export interface FormatSupportInfo {
@@ -58,3 +88,4 @@ export interface FormatSupportInfo {
   webp: boolean;
   avif: boolean;
 }
+
