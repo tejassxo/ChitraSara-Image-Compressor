@@ -8,15 +8,16 @@
 
 <br/>
 
-[![100% Client-Side](https://img.shields.io/badge/Privacy-100%25%20Client--Side-10B981?style=for-the-badge&logo=shield&logoColor=white)](https://github.com/tejassxo)
-[![Zero Server Bytes](https://img.shields.io/badge/Network-0%20Bytes%20Uploaded-3B82F6?style=for-the-badge)](https://github.com/tejassxo)
-[![Bundle Budget](https://img.shields.io/badge/Bundle%20Size-28.4%20KB%20Gzipped-8B5CF6?style=for-the-badge)](https://github.com/tejassxo)
-[![Runtime Dependencies](https://img.shields.io/badge/Dependencies-0%20Runtime-F59E0B?style=for-the-badge)](https://github.com/tejassxo)
+[![Live Production](https://img.shields.io/badge/Production-chitrasara.vercel.app-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://chitrasara.vercel.app)
+[![100% Client-Side](https://img.shields.io/badge/Privacy-100%25%20Client--Side-10B981?style=for-the-badge&logo=shield&logoColor=white)](https://chitrasara.vercel.app)
+[![Zero Server Bytes](https://img.shields.io/badge/Network-0%20Bytes%20Uploaded-3B82F6?style=for-the-badge)](https://chitrasara.vercel.app)
+[![Bundle Budget](https://img.shields.io/badge/Bundle%20Size-28.4%20KB%20Gzipped-8B5CF6?style=for-the-badge)](https://chitrasara.vercel.app)
+[![Runtime Dependencies](https://img.shields.io/badge/Dependencies-0%20Runtime-F59E0B?style=for-the-badge)](https://chitrasara.vercel.app)
 [![License: MIT](https://img.shields.io/badge/License-MIT-06B6D4?style=for-the-badge)](LICENSE)
 
 <br/>
 
-**[Live Demo](#-vercel-production-deployment-architecture) • [Features](#-signature-pro-features) • [Architecture](#-system-architecture--working-pipeline) • [Benchmarks](#-measured-performance--bundle-budget) • [Keyboard Shortcuts](#-keyboard-shortcuts-matrix)**
+**[🚀 Launch Studio (chitrasara.vercel.app)](https://chitrasara.vercel.app) • [Features](#-signature-pro-features) • [Architecture](#-system-architecture--working-pipeline) • [Benchmarks](#-measured-performance--bundle-budget) • [Keyboard Shortcuts](#-keyboard-shortcuts-matrix)**
 
 ---
 
@@ -156,6 +157,8 @@ ChitraSara was designed to run everywhere without Out-Of-Memory (OOM) browser cr
 
 ## 🚀 Vercel Production Deployment Architecture
 
+> 🌐 **Live Production Deployment:** **[https://chitrasara.vercel.app](https://chitrasara.vercel.app)**
+
 ChitraSara is deployed as an ultra-lean **Static Vite CDN Application** on Vercel Global Edge:
 
 ```
@@ -242,8 +245,9 @@ npm run build:check
 
 *“Engineered for absolute fidelity, zero bloat, and uncompromising privacy.”*
 
-[![GitHub](https://img.shields.io/badge/GitHub-@tejassxo-181717?style=flat-square&logo=github)](https://github.com/tejassxo)
+[![Live App](https://img.shields.io/badge/Live%20App-chitrasara.vercel.app-000000?style=flat-square&logo=vercel)](https://chitrasara.vercel.app)
 [![Portfolio](https://img.shields.io/badge/Portfolio-mtejasyadav.vercel.app-000000?style=flat-square&logo=vercel)](https://mtejasyadav.vercel.app)
+[![GitHub](https://img.shields.io/badge/GitHub-@tejassxo-181717?style=flat-square&logo=github)](https://github.com/tejassxo)
 [![MIT License](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
 
 © 2026 **M TEJAS YADAV**. All rights reserved.
