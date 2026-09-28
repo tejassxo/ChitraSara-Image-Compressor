@@ -34,10 +34,10 @@ export class Header {
         </div>
         <div class="brand-text">
           <div class="brand-title-row">
-            <h1 class="brand-title">OptiPulse</h1>
+            <h1 class="brand-title">ChitraSara</h1>
             <span class="brand-pill">STUDIO</span>
           </div>
-          <span class="brand-sub">Universal Client-Side Compression &amp; Solver</span>
+          <span class="brand-sub">Image Optimization Studio</span>
         </div>
       </div>
 

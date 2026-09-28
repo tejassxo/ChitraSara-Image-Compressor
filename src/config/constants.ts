@@ -1,5 +1,5 @@
 /**
- * Immutable Configuration Constants for OptiPulse Compression Engine
+ * Immutable Configuration Constants for ChitraSara Compression Engine
  */
 
 export * from './mime';

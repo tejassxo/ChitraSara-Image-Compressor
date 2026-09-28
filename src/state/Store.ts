@@ -25,12 +25,13 @@ export interface AppState {
 
 export type StateListener = (state: AppState, prevState: AppState) => void;
 
-const SETTINGS_KEY = 'optipulse_settings_v1';
+const SETTINGS_KEY = 'chitrasara_settings_v1';
+const LEGACY_SETTINGS_KEY = 'optipulse_settings_v1';
 
 export function loadStoredSettings(): { autoProcess?: boolean; options?: Partial<CompressionOptions> } {
   try {
     if (typeof localStorage !== 'undefined') {
-      const raw = localStorage.getItem(SETTINGS_KEY);
+      const raw = localStorage.getItem(SETTINGS_KEY) || localStorage.getItem(LEGACY_SETTINGS_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
         return {
