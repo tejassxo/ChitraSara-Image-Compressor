@@ -111,6 +111,9 @@ export class Store {
   public setState(partial: Partial<AppState>): void {
     const prevState = this.state;
     this.state = { ...prevState, ...partial };
+    if (partial.options || partial.autoProcess !== undefined) {
+      saveStoredSettings(this.state);
+    }
     this.notify(this.state, prevState);
   }
 
@@ -258,4 +261,17 @@ export class Store {
   }
 }
 
-export const appStore = new Store();
+const savedSettings = loadStoredSettings();
+export const appStore = new Store({
+  autoProcess: savedSettings.autoProcess ?? ENGINE_DEFAULTS.AUTO_PROCESS_DEFAULT,
+  options: {
+    format: savedSettings.options?.format ?? 'original',
+    quality: savedSettings.options?.quality ?? ENGINE_DEFAULTS.DEFAULT_QUALITY,
+    mode: savedSettings.options?.mode ?? 'quality',
+    resize: {
+      mode: 'original',
+      maintainAspectRatio: true,
+    },
+  },
+});
+
