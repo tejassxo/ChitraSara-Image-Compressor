@@ -9,6 +9,13 @@ window.addEventListener('DOMContentLoaded', () => {
     if (appContainer) {
       new App(appContainer);
     }
+
+    // Register PWA Service Worker for offline shell capability
+    if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.hostname === 'localhost')) {
+      navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch((swErr) => {
+        console.warn('Service worker registration bypassed:', swErr);
+      });
+    }
   } catch (err: unknown) {
     console.error('Fatal initialization error:', err);
     const errorBanner = document.querySelector<HTMLElement>('#error-banner');
