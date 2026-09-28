@@ -97,7 +97,8 @@ export class BatchActions {
   }
 
   private static async dispatchItem(id: string): Promise<void> {
-    const item = appStore.getState().batchItems.find((i: BatchItem) => i.id === id);
+    const state = appStore.getState();
+    const item = state.batchItems.find((i: BatchItem) => i.id === id);
     if (!item) return;
 
     const startTime = performance.now();

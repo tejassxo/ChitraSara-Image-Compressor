@@ -1,15 +1,17 @@
 import type { CompressionResult, SourceImage } from '../../types';
 import { formatBytes, formatDimensions } from '../../utils/formatters';
+import { DeltaHeatmapService } from '../../services/DeltaHeatmapService';
 
 export class SinglePreview {
   private element: HTMLElement;
   private originalImg: HTMLImageElement | null = null;
   private compressedImg: HTMLImageElement | null = null;
+  private heatmapImg: HTMLImageElement | null = null;
   private splitHairline: HTMLElement | null = null;
   private isDragging = false;
   private loaderEl: HTMLElement | null = null;
   private currentZoom = 1;
-  private viewMode: 'split' | 'toggle' = 'split';
+  private viewMode: 'split' | 'toggle' | 'heatmap' = 'split';
   private showingOriginalInToggle = false;
 
   constructor() {
@@ -32,10 +34,11 @@ export class SinglePreview {
         </div>
 
         <div class="preview-toolbar-actions">
-          <!-- View Mode (Split vs Flip) -->
+          <!-- View Mode (Split vs Flip vs Heatmap) -->
           <div class="mini-segmented" id="preview-mode-toggle">
             <button type="button" class="mini-seg-btn active" data-view="split" title="Split Screen Slider">Split</button>
             <button type="button" class="mini-seg-btn" data-view="toggle" title="Click or Spacebar to Toggle A/B">A/B Flip</button>
+            <button type="button" class="mini-seg-btn" data-view="heatmap" title="Amplified Chroma Delta Heatmap">Heatmap</button>
           </div>
 
           <!-- Zoom Controls -->
@@ -53,6 +56,7 @@ export class SinglePreview {
           <span class="meta-arrow">➔</span>
           <span class="meta-chip meta-chip-comp" id="preview-meta-comp">Compressed: 0 B</span>
           <span class="meta-chip meta-chip-res" id="preview-meta-res">-- × --</span>
+          <span class="meta-chip meta-chip-fidelity hidden" id="preview-meta-fidelity">SSIM: --</span>
         </div>
       </div>
 
@@ -69,11 +73,17 @@ export class SinglePreview {
             <img id="img-compressed" alt="Compressed Image" draggable="false" />
             <span class="layer-badge layer-badge-right" id="badge-comp">Compressed</span>
           </div>
+
+          <!-- Heatmap Layer -->
+          <div class="preview-layer preview-layer-heatmap hidden" id="layer-heatmap">
+            <img id="img-heatmap" alt="Chroma Delta Heatmap" draggable="false" />
+            <span class="layer-badge layer-badge-right" id="badge-heat" style="background: rgba(220, 38, 38, 0.85);">Delta (3× Gain)</span>
+          </div>
         </div>
 
         <!-- Draggable Hairline Splitter -->
         <div class="split-divider" id="split-divider" style="left: 50%;">
-          <div class="split-handle">
+          <div class="split-handle" title="Drag to compare">
             <svg width="10" height="14" viewBox="0 0 10 14" fill="none">
               <path d="M3 3L1 7L3 11M7 3L9 7L7 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
@@ -90,6 +100,7 @@ export class SinglePreview {
 
     this.originalImg = this.element.querySelector<HTMLImageElement>('#img-original');
     this.compressedImg = this.element.querySelector<HTMLImageElement>('#img-compressed');
+    this.heatmapImg = this.element.querySelector<HTMLImageElement>('#img-heatmap');
     this.splitHairline = this.element.querySelector<HTMLElement>('#split-divider');
     this.loaderEl = this.element.querySelector<HTMLElement>('#preview-loader');
     this.updateSplit(50);
@@ -160,26 +171,51 @@ export class SinglePreview {
         e.stopPropagation();
         modeBtns.forEach((b) => b.classList.remove('active'));
         btn.classList.add('active');
-        const v = btn.getAttribute('data-view') as 'split' | 'toggle';
+        const v = btn.getAttribute('data-view') as 'split' | 'toggle' | 'heatmap';
         this.viewMode = v;
 
+        const origLayer = this.element.querySelector<HTMLElement>('#layer-original');
         const compLayer = this.element.querySelector<HTMLElement>('#layer-compressed');
+        const heatLayer = this.element.querySelector<HTMLElement>('#layer-heatmap');
         const origBadge = this.element.querySelector<HTMLElement>('#badge-orig');
         const compBadge = this.element.querySelector<HTMLElement>('#badge-comp');
 
         if (v === 'split') {
+          if (heatLayer) heatLayer.classList.add('hidden');
+          if (origLayer) {
+            origLayer.style.display = 'block';
+            origLayer.style.opacity = '1';
+          }
+          if (compLayer) {
+            compLayer.style.display = 'block';
+            compLayer.style.opacity = '1';
+          }
           if (this.splitHairline) this.splitHairline.style.display = 'block';
           if (hintEl) hintEl.textContent = 'Drag hairline divider to inspect pixels';
           this.updateSplit(50);
           if (origBadge) origBadge.style.display = 'block';
           if (compBadge) compBadge.style.display = 'block';
-        } else {
+        } else if (v === 'toggle') {
+          if (heatLayer) heatLayer.classList.add('hidden');
+          if (origLayer) {
+            origLayer.style.display = 'block';
+            origLayer.style.clipPath = 'none';
+          }
+          if (compLayer) {
+            compLayer.style.display = 'block';
+            compLayer.style.clipPath = 'none';
+          }
           if (this.splitHairline) this.splitHairline.style.display = 'none';
-          const origLayer = this.element.querySelector<HTMLElement>('#layer-original');
-          if (origLayer) origLayer.style.clipPath = 'none';
-          if (compLayer) compLayer.style.clipPath = 'none';
+          if (hintEl) hintEl.textContent = 'Click stage or Spacebar to flip between Original & Compressed';
           this.showingOriginalInToggle = false;
           this.updateToggleBadges();
+        } else if (v === 'heatmap') {
+          if (this.splitHairline) this.splitHairline.style.display = 'none';
+          if (origLayer) origLayer.style.display = 'none';
+          if (compLayer) compLayer.style.display = 'none';
+          if (heatLayer) heatLayer.classList.remove('hidden');
+          if (hintEl) hintEl.textContent = 'Chroma Delta Heatmap (3× Variance Amplification - Pure Math)';
+          this.renderHeatmap();
         }
       });
     });
@@ -267,17 +303,37 @@ export class SinglePreview {
     }
   }
 
+  private async renderHeatmap(): Promise<void> {
+    if (!this.originalImg || !this.compressedImg || !this.heatmapImg) return;
+    if (!this.originalImg.src || !this.compressedImg.src) return;
+
+    try {
+      this.loaderEl?.classList.remove('hidden');
+      const res = await DeltaHeatmapService.generateHeatmap(this.originalImg, this.compressedImg, { gain: 3 });
+      if (this.heatmapImg) {
+        this.heatmapImg.src = res.heatmapDataUrl;
+      }
+    } catch (err) {
+      console.warn('Failed to generate delta heatmap:', err);
+    } finally {
+      this.loaderEl?.classList.add('hidden');
+    }
+  }
+
   public update(source: SourceImage | null, result: CompressionResult | null): void {
     const metaOrig = this.element.querySelector<HTMLElement>('#preview-meta-orig');
     const metaComp = this.element.querySelector<HTMLElement>('#preview-meta-comp');
     const metaRes = this.element.querySelector<HTMLElement>('#preview-meta-res');
+    const metaFidelity = this.element.querySelector<HTMLElement>('#preview-meta-fidelity');
 
     if (!source) {
       if (this.originalImg) this.originalImg.src = '';
       if (this.compressedImg) this.compressedImg.src = '';
+      if (this.heatmapImg) this.heatmapImg.src = '';
       if (metaOrig) metaOrig.textContent = 'Original: 0 B';
       if (metaComp) metaComp.textContent = 'Compressed: 0 B';
       if (metaRes) metaRes.textContent = '-- × --';
+      if (metaFidelity) metaFidelity.classList.add('hidden');
       return;
     }
 
@@ -304,12 +360,29 @@ export class SinglePreview {
         const outMp = ((result.dimensions.width * result.dimensions.height) / 1e6).toFixed(1);
         metaRes.textContent = `${formatDimensions(result.dimensions.width, result.dimensions.height)} (${outMp} MP)`;
       }
+      if (metaFidelity) {
+        if (result.fidelityMetrics) {
+          metaFidelity.classList.remove('hidden');
+          const ssimVal = result.fidelityMetrics.ssim.toFixed(3);
+          const psnrVal = result.fidelityMetrics.psnr > 0 ? `${result.fidelityMetrics.psnr.toFixed(1)} dB` : '∞';
+          metaFidelity.textContent = `SSIM: ${ssimVal} | PSNR: ${psnrVal}`;
+          metaFidelity.title = `SSIM: ${ssimVal} (Structural Similarity), PSNR: ${psnrVal} (Peak Signal-to-Noise Ratio)`;
+        } else {
+          metaFidelity.classList.add('hidden');
+        }
+      }
+      if (this.viewMode === 'heatmap') {
+        this.renderHeatmap();
+      }
     } else {
       if (this.compressedImg) {
         this.compressedImg.src = source.originalUrl;
       }
       if (metaComp) {
         metaComp.textContent = 'Compressing...';
+      }
+      if (metaFidelity) {
+        metaFidelity.classList.add('hidden');
       }
     }
   }
