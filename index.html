@@ -3,11 +3,29 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>OptiPulse Pro | Client-Side Image Compression &amp; Solver System</title>
-  <meta name="description" content="Ultra-fast, 100% client-side macOS Pro image compressor and target-size solver. Multi-threaded Web Workers, adaptive batch processing, and Apple-grade functional pro interface." />
+  <title>OptiPulse Studio | Client-Side Image Optimizer &amp; Target Size Solver</title>
+  <meta name="description" content="100% client-side privacy-first image compressor, format converter, and progressive target-size solver. Multi-threaded Web Workers, zero server uploads, and high-fidelity visual diff studio." />
+  <meta name="theme-color" content="#0F172A" />
+  
+  <!-- Open Graph / Social Sharing -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="OptiPulse Studio | Client-Side Image Optimizer" />
+  <meta property="og:description" content="100% client-side privacy-first image compression and target-size solver. Your images never leave your browser." />
+  <meta property="og:image" content="/favicon.svg" />
+  
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="OptiPulse Studio | Client-Side Image Optimizer" />
+  <meta name="twitter:description" content="100% client-side privacy-first image compression and target-size solver. Your images never leave your browser." />
+
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="stylesheet" href="/src/style.css" />
 </head>
 <body>
+  <!-- Accessibility Live Region for Screen Readers -->
+  <div id="a11y-announcer" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+
   <div id="app" class="app-container"></div>
   <script type="module" src="/src/index.ts"></script>
 </body>
