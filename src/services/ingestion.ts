@@ -15,6 +15,11 @@ export class IngestionService {
       throw new Error('Selected file is empty (0 bytes)');
     }
 
+    const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100 MB limit
+    if (file.size > MAX_FILE_SIZE) {
+      throw new Error(`File size (${(file.size / (1024 * 1024)).toFixed(1)} MB) exceeds the maximum safety limit of 100 MB.`);
+    }
+
     const mime = file.type as SupportedMimeType;
     if (!SUPPORTED_MIME_TYPES.includes(mime)) {
       throw new Error(
@@ -38,6 +43,15 @@ export class IngestionService {
     } catch {
       MemoryLifecycle.revokeUrl(tempUrl);
       throw new Error('Failed to decode image data. The file may be corrupt or invalid.');
+    }
+
+    const MAX_DIM = 16384;
+    const MAX_PIXELS = 64 * 1024 * 1024; // 64 MP
+    if (dimensions.width > MAX_DIM || dimensions.height > MAX_DIM || dimensions.width * dimensions.height > MAX_PIXELS) {
+      MemoryLifecycle.revokeUrl(tempUrl);
+      throw new Error(
+        `Image resolution (${dimensions.width}×${dimensions.height}) exceeds safety limit of 64 Megapixels or 16,384px per side.`
+      );
     }
 
     const sourceImage: SourceImage = {
