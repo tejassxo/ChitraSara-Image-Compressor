@@ -3,6 +3,7 @@ import type { CompressionResult, ImageDimensions } from '../types/engine';
 import { MIME_TO_EXTENSION } from '../config/mime';
 import { TargetSizeSolver } from '../core/solver/TargetSizeSolver';
 import { CanvasRasterizer } from '../core/engine/CanvasRasterizer';
+import { OutputValidator } from '../core/engine/OutputValidator';
 
 // Active task abort controllers for cancellation inside worker
 const activeTasks = new Map<string, AbortController>();
@@ -23,21 +24,24 @@ self.onmessage = async (e: MessageEvent<TaskEnvelope>) => {
   const controller = new AbortController();
   activeTasks.set(taskId, controller);
 
-  try {
-    let bitmap: ImageBitmap;
-    let ownBitmap = false;
+  let bitmap: ImageBitmap | null = null;
+  let ownBitmap = false;
 
+  try {
     if (envelope.imageBitmap) {
       bitmap = envelope.imageBitmap;
     } else if (envelope.fileBlob) {
-      bitmap = await createImageBitmap(envelope.fileBlob);
+      try {
+        bitmap = await createImageBitmap(envelope.fileBlob, { imageOrientation: 'from-image' });
+      } catch {
+        bitmap = await createImageBitmap(envelope.fileBlob);
+      }
       ownBitmap = true;
     } else {
       throw new Error('Task missing imageBitmap or fileBlob');
     }
 
     if (controller.signal.aborted) {
-      if (ownBitmap) bitmap.close();
       throw new DOMException('Worker task aborted', 'AbortError');
     }
 
@@ -46,9 +50,12 @@ self.onmessage = async (e: MessageEvent<TaskEnvelope>) => {
     let finalDims: ImageDimensions = envelope.maxDimensions;
     let iterationsCount = 1;
     let downscaled = false;
+    let impossibleTarget = false;
+    let targetAchieved = true;
+    let targetMessage: string | undefined;
 
     if (action === 'SOLVE_TARGET' && envelope.solverOptions?.targetBytes) {
-      // Execute TargetSizeSolver loop
+      // Execute TargetSizeSolver 2.0 loop
       const solverResult = await TargetSizeSolver.solve({
         sourceImage: bitmap,
         targetBytes: envelope.solverOptions.targetBytes,
@@ -65,6 +72,9 @@ self.onmessage = async (e: MessageEvent<TaskEnvelope>) => {
       finalDims = solverResult.finalDimensions;
       iterationsCount = solverResult.iterationsCount;
       downscaled = solverResult.downscaled;
+      impossibleTarget = solverResult.impossibleTarget;
+      targetAchieved = solverResult.targetAchieved;
+      targetMessage = solverResult.targetMessage;
     } else {
       // Standard Direct Compression
       finalBlob = await CanvasRasterizer.renderAndEncode(bitmap, {
@@ -76,12 +86,15 @@ self.onmessage = async (e: MessageEvent<TaskEnvelope>) => {
       });
     }
 
-    if (ownBitmap) {
-      try {
-        bitmap.close();
-      } catch {
-        // Ignore
-      }
+    // Validate Candidate
+    const validation = await OutputValidator.validateCandidate(finalBlob, {
+      expectedFormat: envelope.format,
+      maxDimensions: finalDims,
+      targetBytes: envelope.solverOptions?.targetBytes,
+    });
+
+    if (!validation.isValid && validation.errors.length > 0) {
+      throw new Error(`Worker generated invalid output: ${validation.errors.join('; ')}`);
     }
 
     const latencyMs = performance.now() - startTime;
@@ -108,6 +121,14 @@ self.onmessage = async (e: MessageEvent<TaskEnvelope>) => {
       filename,
       iterationsCount,
       downscaled,
+      impossibleTarget,
+      targetAchieved,
+      targetMessage,
+      validationResult: {
+        isValid: validation.isValid,
+        errors: validation.errors,
+        warnings: validation.warnings,
+      },
     };
 
     const response: WorkerResponse = {
@@ -130,6 +151,13 @@ self.onmessage = async (e: MessageEvent<TaskEnvelope>) => {
 
     self.postMessage(errorResponse);
   } finally {
+    if (ownBitmap && bitmap) {
+      try {
+        bitmap.close();
+      } catch {
+        // Ignore
+      }
+    }
     activeTasks.delete(taskId);
   }
 };
