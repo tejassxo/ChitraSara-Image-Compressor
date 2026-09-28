@@ -1,6 +1,7 @@
 import { SUPPORTED_MIME_TYPES, type SupportedMimeType } from '../config/constants';
 import { MemoryLifecycle } from './lifecycle';
 import type { ImageDimensions, SourceImage } from '../types';
+import { getExifOrientation } from '../utils/exif';
 
 export class IngestionService {
   /**
@@ -32,9 +33,21 @@ export class IngestionService {
     const tempUrl = URL.createObjectURL(file);
     MemoryLifecycle.trackUrl(tempUrl);
 
+    let orientation = 1;
+    try {
+      orientation = await getExifOrientation(file);
+    } catch {
+      orientation = 1;
+    }
+
     try {
       if (typeof createImageBitmap === 'function') {
-        const bitmap = await createImageBitmap(file);
+        let bitmap: ImageBitmap;
+        try {
+          bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
+        } catch {
+          bitmap = await createImageBitmap(file);
+        }
         dimensions = { width: bitmap.width, height: bitmap.height };
         bitmap.close();
       } else {
@@ -54,12 +67,18 @@ export class IngestionService {
       );
     }
 
+    const hasAlpha = mime === 'image/png' || mime === 'image/webp' || mime === 'image/avif';
+    const aspectRatio = dimensions.width / Math.max(1, dimensions.height);
+
     const sourceImage: SourceImage = {
       file,
       originalUrl: tempUrl,
       dimensions,
       size: file.size,
       type: mime,
+      hasAlpha,
+      orientation,
+      aspectRatio,
     };
 
     return sourceImage;
