@@ -175,7 +175,8 @@ export class SinglePreview {
           if (compBadge) compBadge.style.display = 'block';
         } else {
           if (this.splitHairline) this.splitHairline.style.display = 'none';
-          if (hintEl) hintEl.textContent = 'Click stage or press Spacebar to toggle Original vs Output';
+          const origLayer = this.element.querySelector<HTMLElement>('#layer-original');
+          if (origLayer) origLayer.style.clipPath = 'none';
           if (compLayer) compLayer.style.clipPath = 'none';
           this.showingOriginalInToggle = false;
           this.updateToggleBadges();
@@ -256,7 +257,11 @@ export class SinglePreview {
     if (this.splitHairline) {
       this.splitHairline.style.left = `${percent}%`;
     }
+    const origLayer = this.element.querySelector<HTMLElement>('#layer-original');
     const compLayer = this.element.querySelector<HTMLElement>('#layer-compressed');
+    if (origLayer) {
+      origLayer.style.clipPath = `polygon(0% 0%, ${percent}% 0%, ${percent}% 100%, 0% 100%)`;
+    }
     if (compLayer) {
       compLayer.style.clipPath = `polygon(${percent}% 0%, 100% 0%, 100% 100%, ${percent}% 100%)`;
     }

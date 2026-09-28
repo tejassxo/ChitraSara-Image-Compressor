@@ -348,7 +348,6 @@ export class ControlsPanel {
         scaleTabs.forEach((t) => t.classList.remove('active'));
         tab.classList.add('active');
         const sm = tab.getAttribute('data-scale-mode') as 'original' | 'scale' | 'custom' | 'preset';
-        this.currentScaleMode = sm;
 
         panelScale?.classList.add('hidden');
         panelCustom?.classList.add('hidden');
