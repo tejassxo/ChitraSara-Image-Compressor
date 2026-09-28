@@ -15,5 +15,8 @@ export interface HardwareCapabilities {
   maxThumbnailDimension: number;
   platform?: string;
   memoryLabel?: string;
+  memoryTooltip?: string;
+  threadsLabel?: string;
+  cpuTooltip?: string;
   gpuRenderer?: string;
 }
