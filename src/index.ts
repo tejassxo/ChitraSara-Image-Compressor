@@ -8,7 +8,6 @@ window.addEventListener('DOMContentLoaded', () => {
     const appContainer = document.querySelector<HTMLElement>('#app');
     if (appContainer) {
       new App(appContainer);
-      console.log('⚡ OptiPulse Pro Engine initialized.');
     }
   } catch (err: unknown) {
     console.error('Fatal initialization error:', err);
