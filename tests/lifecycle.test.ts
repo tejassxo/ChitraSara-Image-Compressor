@@ -79,9 +79,9 @@ describe('Memory Lifecycle & Zero-Leak Invariants', () => {
       resize: { mode: 'original', maintainAspectRatio: true },
     };
 
-    // 1. Success state
+    // 1. Success state (source bitmap + OutputValidator candidate + fidelity probe bitmap are all deterministically closed)
     const result = await CompressionEngine.compress(fakeImage, options, 'test.jpg');
-    expect(closeSpy).toHaveBeenCalledTimes(1);
+    expect(closeSpy).toHaveBeenCalledTimes(3);
 
     // 2. Abort / Canceled state
     closeSpy.mockClear();
