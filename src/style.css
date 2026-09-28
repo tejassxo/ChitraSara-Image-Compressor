@@ -1452,14 +1452,170 @@ kbd {
 }
 
 /* ==========================================================================
-   Footer
+   ChitraSara Global Footer
    ========================================================================== */
 
-.app-footer {
-  text-align: center;
-  padding-top: var(--space-16);
+.chitrasara-footer {
+  margin-top: var(--space-32);
+  padding: var(--space-24) var(--space-24) var(--space-32);
+  border-top: 1px solid var(--hairline);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  font-size: 12px;
+  width: 100%;
+}
+
+.footer-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-16);
+  flex-wrap: wrap;
+}
+
+.footer-col-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.footer-brand-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.footer-brand-name {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+.footer-brand-sub {
+  font-weight: 500;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.footer-dot-sep {
+  color: var(--hairline-dark);
+  font-size: 10px;
+  user-select: none;
+}
+
+.footer-subtext {
+  margin: 0;
   font-size: 11px;
   color: var(--text-muted);
+}
+
+.footer-col-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.footer-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  transition: all var(--duration-quick);
+}
+
+.footer-link:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+  border-color: var(--hairline);
+}
+
+.footer-link:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+.footer-col-signature {
+  display: flex;
+  align-items: center;
+}
+
+.footer-signature-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: var(--bg-base);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: default;
+  user-select: none;
+  transition: border-color var(--duration-quick), background-color var(--duration-quick);
+}
+
+.footer-signature-pill:hover {
+  border-color: var(--hairline-dark);
+  background: var(--bg-hover);
+}
+
+.footer-signature-pill .signature-text strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.signature-trident {
+  display: inline-block;
+  font-size: 15px;
+  line-height: 1;
+  transform-origin: 50% 80%;
+  will-change: transform;
+}
+
+/* Responsive Footer Layouts */
+@media (max-width: 900px) {
+  .footer-container {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--space-16);
+  }
+
+  .footer-col-brand {
+    align-items: center;
+  }
+
+  .footer-col-nav {
+    justify-content: center;
+  }
+
+  .footer-col-signature {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .chitrasara-footer {
+    padding: var(--space-20) var(--space-12) var(--space-24);
+  }
+
+  .footer-brand-title-row {
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .footer-brand-title-row .footer-dot-sep {
+    display: none;
+  }
 }
 
 /* Accessibility screen-reader only utility */

@@ -19,7 +19,7 @@ export const CHITRASARA_FOOTER_CONFIG: FooterConfig = {
   brandSubtitle: 'Image Optimization Studio',
   githubUrl: 'https://github.com/tejassxo',
   portfolioUrl: 'https://github.com/tejassxo',
-  creatorName: 'Tejas',
+  creatorName: 'M TEJAS YADAV',
 };
 
 export class ChitraSaraFooter {

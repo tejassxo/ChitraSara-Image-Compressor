@@ -4,6 +4,7 @@ import { SinglePreview } from './components/SinglePreview';
 import { ControlsPanel } from './components/ControlsPanel';
 import { BatchList } from './components/BatchList';
 import { MetricsBar } from './components/MetricsBar';
+import { ChitraSaraFooter } from './components/ChitraSaraFooter';
 import { appStore, type AppState } from '../state/store';
 import { BatchActions } from '../state/actions';
 import { CompressionEngine } from '../core/engine/CompressionEngine';
@@ -18,6 +19,7 @@ export class App {
   private controlsPanel: ControlsPanel;
   private batchList: BatchList;
   private metricsBar: MetricsBar;
+  private footer: ChitraSaraFooter;
   private activeAbortController: AbortController | null = null;
 
   constructor(container: HTMLElement) {
@@ -34,6 +36,7 @@ export class App {
       () => this.handleReset(),
       () => this.handleDownload()
     );
+    this.footer = new ChitraSaraFooter();
 
     this.mount();
     this.subscribeToStore();
@@ -73,18 +76,10 @@ export class App {
     studioSection.appendChild(centerCol);
     main.appendChild(studioSection);
 
-    const footer = document.createElement('footer');
-    footer.className = 'app-footer';
-    footer.innerHTML = `
-      <div class="footer-content">
-        <span><strong>OptiPulse Studio</strong> &bull; Zero Frameworks &bull; Thread-Isolated Web Workers &bull; 100% Client-Side Privacy</span>
-      </div>
-    `;
-
     this.container.appendChild(this.header.getElement());
     this.container.appendChild(errorBanner);
     this.container.appendChild(main);
-    this.container.appendChild(footer);
+    this.container.appendChild(this.footer.getElement());
   }
 
   private runEntranceAnimations(): void {

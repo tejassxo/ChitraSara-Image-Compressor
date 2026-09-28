@@ -1,8 +1,9 @@
-# ⚡ Next-Gen Image Compressor & Visual Optimization Studio
+# ⚡ ChitraSara — Image Optimization Studio
 
-> **100% Client-Side. Zero Server Uploads. Universal Runnability. Blazing Fast.**
+> **100% Client-Side. Zero Server Uploads. Universal Runnability. Blazing Fast.**  
+> *"Chitra" (चित्र) = Image / Picture &bull; "Sara" (सार) = Essence / Core*
 
-An ultra-modern, privacy-first web application engineered to compress, convert, and inspect images directly within your browser. Built to overcome the limitations, paywalls, and privacy hazards of tools like TinyPNG and Squoosh, this compressor runs anywhere—from high-powered multi-core workstations down to a **$50 budget phone with 1 GB of RAM**.
+An ultra-modern, privacy-first web application engineered to compress, convert, and inspect images directly within your browser. Built to overcome the limitations, paywalls, and privacy hazards of tools like TinyPNG and Squoosh, ChitraSara runs anywhere—from high-powered multi-core workstations down to a **$50 budget phone with 1 GB of RAM**.
 
 ---
 
@@ -19,7 +20,7 @@ An ultra-modern, privacy-first web application engineered to compress, convert, 
 
 ## 🥊 Why This Exists (Competitive Landscape)
 
-| Feature | TinyPNG / TinyJPG | Squoosh (Google) | ILoveIMG | **Our Compressor** |
+| Feature | TinyPNG / TinyJPG | Squoosh (Google) | ILoveIMG | **ChitraSara** |
 | :--- | :--- | :--- | :--- | :--- |
 | **Privacy & Architecture** | ❌ Uploads to cloud | ✅ 100% Client-side | ❌ Uploads to cloud | **🔒 100% Client-Side (Zero Server Bytes)** |
 | **Batch Processing** | ❌ 20 max (paywalled) | ❌ None (1 by 1 only) | ❌ Throttled queues | **⚡ Unlimited Multi-Core Batch + ZIP** |
@@ -146,7 +147,7 @@ $$\Delta_{\text{pixel}} = \min\Big(255, \; \max(|R_1 - R_2|, |G_1 - G_2|, |B_1 -
 
 ## 🔒 100% Client-Side Privacy Architecture
 
-OptiPulse Studio operates under a strict, mathematically verifiable privacy guarantee:
+ChitraSara operates under a strict, mathematically verifiable privacy guarantee:
 
 > **ZERO IMAGE BYTES LEAVE YOUR BROWSER. EVER.**
 
@@ -160,7 +161,7 @@ OptiPulse Studio operates under a strict, mathematically verifiable privacy guar
 
 ## 🚀 Vercel Production Deployment Architecture
 
-OptiPulse Studio is architected as a **Static Vite CDN Deployment** on Vercel. Because all compression logic is client-side, no serverless functions, backends, or databases are required.
+ChitraSara is architected as a **Static Vite CDN Deployment** on Vercel. Because all compression logic is client-side, no serverless functions, backends, or databases are required.
 
 ```
 User Browser
@@ -217,7 +218,7 @@ The application is security-hardened against modern web threat classes:
 
 Because image processing is 100% client-side, **traditional server-side HTTP request rate limiting does not apply**. Serving static assets is handled by Vercel's global edge network with built-in DDoS protection.
 
-Instead, OptiPulse implements **Client-Side Local Resource Governance**:
+Instead, ChitraSara implements **Client-Side Local Resource Governance**:
 1. **Adaptive Concurrency:** Low-memory devices ($\le 2\text{ GB}$ RAM or $\le 2$ CPU cores) are locked to sequential 1-by-1 processing to prevent mobile browser crashes.
 2. **Watchdog Timeout:** 30-second execution deadline per compression task prevents infinite loops in complex codecs.
 3. **Automatic Worker Restart:** Unresponsive or terminated workers are replaced automatically without disrupting the batch queue.
@@ -254,7 +255,7 @@ Instead, OptiPulse implements **Client-Side Local Resource Governance**:
 ## ⚠️ Known Limitations & Troubleshooting
 
 1. **Browser Memory Bounds:** Extremely large batches (e.g. 50+ RAW 48MP photos) on mobile devices with $\le 2\text{ GB}$ RAM may experience throttling by mobile OS process managers. Use the target-size solver with downscaling enabled.
-2. **Safari WebP/AVIF Encoding:** Older versions of WebKit/Safari (pre-16) lack native AVIF write support. OptiPulse automatically detects this and offers WebP or JPEG formats.
+2. **Safari WebP/AVIF Encoding:** Older versions of WebKit/Safari (pre-16) lack native AVIF write support. ChitraSara automatically detects this and offers WebP or JPEG formats.
 3. **Background Tab Throttling:** Modern browsers aggressively throttle `requestAnimationFrame` and `setTimeout` in inactive background tabs. Keep the tab visible for maximum multi-core throughput.
 
 ---
