@@ -1,4 +1,4 @@
-import type { FidelityMetrics, FidelityProfile, ImageDimensions } from '../../types';
+import type { FidelityMetrics, FidelityProfile } from '../../types';
 
 export interface FidelityThresholds {
   minSsim: number;
