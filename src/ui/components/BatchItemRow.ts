@@ -1,6 +1,7 @@
 import type { BatchItem } from '../../types';
 import { formatBytes, formatPercent } from '../../utils/formatters';
 import { BatchActions } from '../../state/actions';
+import { escapeHtml } from '../../utils/dom';
 
 export class BatchItemRow {
   private element: HTMLElement;
@@ -39,19 +40,20 @@ export class BatchItemRow {
 
     const thumbSrc = item.thumbnailUrl || '';
 
+    const safeName = escapeHtml(item.name);
     this.element.innerHTML = `
       <div class="batch-cell thumb-cell">
         <div class="row-thumbnail">
           ${
             thumbSrc
-              ? `<img src="${thumbSrc}" alt="${item.name}" />`
+              ? `<img src="${thumbSrc}" alt="${safeName}" />`
               : `<div class="thumb-placeholder">IMG</div>`
           }
         </div>
       </div>
 
       <div class="batch-cell info-cell">
-        <div class="row-name" title="${item.name}">${item.name}</div>
+        <div class="row-name" title="${safeName}">${safeName}</div>
         <div class="row-sizes">
           <span>${origSize}</span>
           ${isCompleted ? `<span class="size-arrow">→</span><span class="comp-size">${compSize}</span>` : ''}
