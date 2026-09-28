@@ -56,16 +56,16 @@ export class App {
     studioSection.id = 'studio-section';
     studioSection.className = 'studio-layout hidden';
 
-    // Left Column: Controls & Metrics
+    // Left Column: Controls Studio Palette
     const sideCol = document.createElement('div');
     sideCol.className = 'studio-side-col';
     sideCol.appendChild(this.controlsPanel.getElement());
-    sideCol.appendChild(this.metricsBar.getElement());
 
-    // Right Column: Preview & Batch Table
+    // Right Column: Inspection Stage, Metrics & Batch Queue
     const centerCol = document.createElement('div');
     centerCol.className = 'studio-center-col';
     centerCol.appendChild(this.singlePreview.getElement());
+    centerCol.appendChild(this.metricsBar.getElement());
     centerCol.appendChild(this.batchList.getElement());
 
     studioSection.appendChild(sideCol);
@@ -88,20 +88,21 @@ export class App {
 
   private runEntranceAnimations(): void {
     try {
-      gsap.from(this.header.getElement(), {
-        y: -10,
-        opacity: 0,
-        duration: 0.45,
-        ease: 'power3.out',
-      });
+      this.header.getElement().animate(
+        [
+          { opacity: '0', transform: 'translateY(-10px)' },
+          { opacity: '1', transform: 'translateY(0)' },
+        ],
+        { duration: 400, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fill: 'forwards' }
+      );
 
-      gsap.from(this.dropzone.getElement(), {
-        y: 12,
-        opacity: 0,
-        duration: 0.5,
-        delay: 0.1,
-        ease: 'power3.out',
-      });
+      this.dropzone.getElement().animate(
+        [
+          { opacity: '0', transform: 'translateY(12px)' },
+          { opacity: '1', transform: 'translateY(0)' },
+        ],
+        { duration: 450, delay: 80, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fill: 'forwards' }
+      );
     } catch {
       // Graceful fallback if motion cannot run
     }
@@ -175,11 +176,12 @@ export class App {
       if (hasContent !== prevHasContent) {
         if (hasContent) {
           studioSection.classList.remove('hidden');
-          // Reveal with GSAP
-          gsap.fromTo(
-            studioSection,
-            { opacity: 0, y: 14 },
-            { opacity: 1, y: 0, duration: 0.4, ease: 'power3.out' }
+          studioSection.animate(
+            [
+              { opacity: '0', transform: 'translateY(12px)' },
+              { opacity: '1', transform: 'translateY(0)' },
+            ],
+            { duration: 350, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fill: 'forwards' }
           );
         } else {
           studioSection.classList.add('hidden');

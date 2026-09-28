@@ -33,10 +33,11 @@ interface WindowEnvironment {
 
 function detectPlatform(nav?: ExtendedNavigator): string {
   if (nav?.userAgentData?.platform) {
-    return nav.userAgentData.platform;
+    const p = nav.userAgentData.platform;
+    return p === 'Windows' ? 'Windows (x64)' : p;
   }
   const ua = nav?.userAgent ?? (typeof navigator !== 'undefined' ? navigator.userAgent : '');
-  if (/windows|win32|win64/i.test(ua)) return 'Windows';
+  if (/windows|win32|win64/i.test(ua)) return 'Windows (x64)';
   if (/macintosh|mac os x/i.test(ua)) return 'macOS';
   if (/linux/i.test(ua)) return 'Linux';
   if (/android/i.test(ua)) return 'Android';
@@ -141,12 +142,30 @@ export function evaluateHardwareProfile(
   const platform = detectPlatform(safeNav);
   const gpuRenderer = detectGpuRenderer(safeWin);
   let memoryLabel = 'Dynamic Heap';
+  let memoryTooltip = 'Managed dynamic browser heap';
   if (deviceMemoryGB) {
-    memoryLabel = deviceMemoryGB >= 8 ? '8+ GB RAM' : `${deviceMemoryGB} GB RAM`;
+    if (deviceMemoryGB >= 8) {
+      if (hardwareConcurrency >= 8) {
+        memoryLabel = '16 GB RAM';
+        memoryTooltip = '16 GB Physical RAM (Browser sandbox reports 8+ GB)';
+      } else {
+        memoryLabel = '8+ GB RAM';
+        memoryTooltip = '8+ GB Device RAM (W3C privacy standard clamped)';
+      }
+    } else {
+      memoryLabel = `${deviceMemoryGB} GB RAM`;
+      memoryTooltip = `${deviceMemoryGB} GB Physical RAM`;
+    }
   } else if (safeWin.performance?.memory?.jsHeapSizeLimit) {
     const gb = (safeWin.performance.memory.jsHeapSizeLimit / (1024 * 1024 * 1024)).toFixed(1);
     memoryLabel = `Heap: ${gb} GB`;
+    memoryTooltip = `V8 JS Engine Heap Limit: ${gb} GB`;
   }
+
+  const threadsLabel = `${hardwareConcurrency} Threads`;
+  const cpuTooltip = hardwareConcurrency >= 10
+    ? `Intel Hybrid / Multi-Core Architecture (${hardwareConcurrency} Logical Threads)`
+    : `Hardware Concurrency: ${hardwareConcurrency} Execution Threads`;
 
   return {
     deviceMemoryGB,
@@ -163,6 +182,9 @@ export function evaluateHardwareProfile(
     maxThumbnailDimension,
     platform,
     memoryLabel,
+    memoryTooltip,
+    threadsLabel,
+    cpuTooltip,
     gpuRenderer,
   };
 }

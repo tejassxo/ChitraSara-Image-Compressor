@@ -8,6 +8,10 @@ export class SinglePreview {
   private splitHairline: HTMLElement | null = null;
   private isDragging = false;
   private loaderEl: HTMLElement | null = null;
+  private currentZoom = 1; // 1 = fit, 2 = 100%, 3 = 200%
+  private isFit = true;
+  private viewMode: 'split' | 'toggle' = 'split';
+  private showingOriginalInToggle = false;
 
   constructor() {
     this.element = document.createElement('div');
@@ -25,26 +29,47 @@ export class SinglePreview {
       <div class="preview-header">
         <div class="preview-title-bar">
           <span class="preview-label">Visual Inspection</span>
-          <span class="preview-split-hint">Drag hairline divider to inspect pixels</span>
+          <span class="preview-split-hint" id="preview-mode-hint">Drag hairline divider to inspect pixels</span>
         </div>
-        <div class="preview-meta-bar" id="preview-meta-bar">
-          <span class="meta-item meta-orig" id="preview-meta-orig">Original: 0 B</span>
-          <span class="meta-separator">|</span>
-          <span class="meta-item meta-comp" id="preview-meta-comp">Compressed: 0 B</span>
+
+        <div class="preview-toolbar-actions">
+          <!-- View Mode (Split vs Flip) -->
+          <div class="mini-segmented" id="preview-mode-toggle">
+            <button type="button" class="mini-seg-btn active" data-view="split" title="Split Screen Slider">Split</button>
+            <button type="button" class="mini-seg-btn" data-view="toggle" title="Click or Spacebar to Toggle A/B">A/B Flip</button>
+          </div>
+
+          <!-- Zoom Controls -->
+          <div class="mini-segmented" id="preview-zoom-group">
+            <button type="button" class="mini-seg-btn active" data-zoom="fit">Fit</button>
+            <button type="button" class="mini-seg-btn" data-zoom="1">100%</button>
+            <button type="button" class="mini-seg-btn" data-zoom="2">200%</button>
+          </div>
         </div>
       </div>
 
-      <div class="preview-stage" id="preview-stage">
-        <!-- Original Layer (Underneath or clipped) -->
-        <div class="preview-layer preview-layer-original" id="layer-original">
-          <img id="img-original" alt="Original Image" draggable="false" />
-          <span class="layer-badge layer-badge-left">Original</span>
+      <div class="preview-meta-bar" id="preview-meta-bar">
+        <div class="meta-chips-row">
+          <span class="meta-chip meta-chip-orig" id="preview-meta-orig">Original: 0 B</span>
+          <span class="meta-arrow">➔</span>
+          <span class="meta-chip meta-chip-comp" id="preview-meta-comp">Compressed: 0 B</span>
+          <span class="meta-chip meta-chip-res" id="preview-meta-res">-- × --</span>
         </div>
+      </div>
 
-        <!-- Compressed Layer (Clipped by slider ratio) -->
-        <div class="preview-layer preview-layer-compressed" id="layer-compressed">
-          <img id="img-compressed" alt="Compressed Image" draggable="false" />
-          <span class="layer-badge layer-badge-right">Compressed</span>
+      <div class="preview-stage" id="preview-stage" tabindex="0" title="Click stage to interact">
+        <div class="stage-zoom-container" id="stage-zoom-container">
+          <!-- Original Layer -->
+          <div class="preview-layer preview-layer-original" id="layer-original">
+            <img id="img-original" alt="Original Image" draggable="false" />
+            <span class="layer-badge layer-badge-left" id="badge-orig">Original</span>
+          </div>
+
+          <!-- Compressed Layer -->
+          <div class="preview-layer preview-layer-compressed" id="layer-compressed">
+            <img id="img-compressed" alt="Compressed Image" draggable="false" />
+            <span class="layer-badge layer-badge-right" id="badge-comp">Compressed</span>
+          </div>
         </div>
 
         <!-- Draggable Hairline Splitter -->
@@ -59,7 +84,7 @@ export class SinglePreview {
         <!-- Processing Loader -->
         <div class="preview-loader hidden" id="preview-loader">
           <div class="loader-spinner"></div>
-          <span class="loader-text">Compressing frame...</span>
+          <span class="loader-text">Encoding image pixels...</span>
         </div>
       </div>
     `;
@@ -75,14 +100,19 @@ export class SinglePreview {
     const stage = this.element.querySelector<HTMLElement>('#preview-stage');
     if (!stage || !this.splitHairline) return;
 
+    // 1. Pointer Drag on Hairline
     const onPointerDown = (e: PointerEvent) => {
+      if (this.viewMode === 'toggle') {
+        this.toggleAB();
+        return;
+      }
       this.isDragging = true;
       this.splitHairline?.setPointerCapture(e.pointerId);
       this.handleDrag(e, stage);
     };
 
     const onPointerMove = (e: PointerEvent) => {
-      if (!this.isDragging) return;
+      if (!this.isDragging || this.viewMode === 'toggle') return;
       this.handleDrag(e, stage);
     };
 
@@ -102,40 +132,151 @@ export class SinglePreview {
     this.splitHairline.addEventListener('pointerup', onPointerUp);
     this.splitHairline.addEventListener('pointercancel', onPointerUp);
 
-    // Also support clicking directly anywhere on the stage to jump split
-    stage.addEventListener('click', (e: MouseEvent) => {
-      if (e.target !== this.splitHairline && !this.splitHairline?.contains(e.target as Node)) {
-        this.handleDrag(e, stage);
+    // Click anywhere on stage to jump divider (if in split mode)
+    stage.addEventListener('pointerdown', (e: PointerEvent) => {
+      if (e.target === this.splitHairline || this.splitHairline?.contains(e.target as Node)) {
+        return;
       }
+      if (this.viewMode === 'split') {
+        this.handleDrag(e, stage);
+      } else {
+        this.toggleAB();
+      }
+    });
+
+    // Keyboard spacebar to toggle A/B
+    stage.addEventListener('keydown', (e: KeyboardEvent) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        this.toggleAB();
+      }
+    });
+
+    // 2. View Mode Toggle
+    const modeBtns = this.element.querySelectorAll<HTMLButtonElement>('#preview-mode-toggle .mini-seg-btn');
+    const hintEl = this.element.querySelector<HTMLElement>('#preview-mode-hint');
+
+    modeBtns.forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        modeBtns.forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        const v = btn.getAttribute('data-view') as 'split' | 'toggle';
+        this.viewMode = v;
+
+        const compLayer = this.element.querySelector<HTMLElement>('#layer-compressed');
+        const origBadge = this.element.querySelector<HTMLElement>('#badge-orig');
+        const compBadge = this.element.querySelector<HTMLElement>('#badge-comp');
+
+        if (v === 'split') {
+          if (this.splitHairline) this.splitHairline.style.display = 'block';
+          if (hintEl) hintEl.textContent = 'Drag hairline divider to inspect pixels';
+          this.updateSplit(50);
+          if (origBadge) origBadge.style.display = 'block';
+          if (compBadge) compBadge.style.display = 'block';
+        } else {
+          if (this.splitHairline) this.splitHairline.style.display = 'none';
+          if (hintEl) hintEl.textContent = 'Click stage or press Spacebar to toggle Original vs Output';
+          if (compLayer) compLayer.style.clipPath = 'none';
+          this.showingOriginalInToggle = false;
+          this.updateToggleBadges();
+        }
+      });
+    });
+
+    // 3. Zoom Controls
+    const zoomBtns = this.element.querySelectorAll<HTMLButtonElement>('#preview-zoom-group .mini-seg-btn');
+    const zoomContainer = this.element.querySelector<HTMLElement>('#stage-zoom-container');
+
+    zoomBtns.forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        zoomBtns.forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        const z = btn.getAttribute('data-zoom');
+
+        if (z === 'fit') {
+          this.isFit = true;
+          this.currentZoom = 1;
+          if (zoomContainer) {
+            zoomContainer.style.transform = 'scale(1)';
+            zoomContainer.style.cursor = 'default';
+          }
+        } else if (z === '1') {
+          this.isFit = false;
+          this.currentZoom = 1.35;
+          if (zoomContainer) {
+            zoomContainer.style.transform = `scale(${this.currentZoom})`;
+            zoomContainer.style.cursor = 'grab';
+          }
+        } else if (z === '2') {
+          this.isFit = false;
+          this.currentZoom = 2.0;
+          if (zoomContainer) {
+            zoomContainer.style.transform = `scale(${this.currentZoom})`;
+            zoomContainer.style.cursor = 'grab';
+          }
+        }
+      });
     });
   }
 
-  private handleDrag(e: MouseEvent | PointerEvent, stage: HTMLElement): void {
-    const rect = stage.getBoundingClientRect();
-    const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
-    const percent = Math.max(0, Math.min(100, (x / rect.width) * 100));
-    this.updateSplit(percent);
+  private toggleAB(): void {
+    if (this.viewMode !== 'toggle') return;
+    this.showingOriginalInToggle = !this.showingOriginalInToggle;
+    const compLayer = this.element.querySelector<HTMLElement>('#layer-compressed');
+    if (compLayer) {
+      compLayer.style.opacity = this.showingOriginalInToggle ? '0' : '1';
+    }
+    this.updateToggleBadges();
   }
 
-  private updateSplit(ratio: number): void {
-    if (this.splitHairline) {
-      this.splitHairline.style.left = `${ratio}%`;
+  private updateToggleBadges(): void {
+    const origBadge = this.element.querySelector<HTMLElement>('#badge-orig');
+    const compBadge = this.element.querySelector<HTMLElement>('#badge-comp');
+    if (this.showingOriginalInToggle) {
+      if (origBadge) {
+        origBadge.style.display = 'block';
+        origBadge.textContent = 'Showing: ORIGINAL';
+      }
+      if (compBadge) compBadge.style.display = 'none';
+    } else {
+      if (origBadge) origBadge.style.display = 'none';
+      if (compBadge) {
+        compBadge.style.display = 'block';
+        compBadge.textContent = 'Showing: COMPRESSED';
+      }
     }
-    const compressedLayer = this.element.querySelector<HTMLElement>('#layer-compressed');
-    if (compressedLayer) {
-      compressedLayer.style.clipPath = `inset(0 0 0 ${ratio}%)`;
+  }
+
+  private handleDrag(e: PointerEvent, stage: HTMLElement): void {
+    const rect = stage.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const pct = Math.max(0, Math.min(100, (x / rect.width) * 100));
+    this.updateSplit(pct);
+  }
+
+  public updateSplit(percent: number): void {
+    if (this.splitHairline) {
+      this.splitHairline.style.left = `${percent}%`;
+    }
+    const compLayer = this.element.querySelector<HTMLElement>('#layer-compressed');
+    if (compLayer) {
+      compLayer.style.clipPath = `polygon(${percent}% 0%, 100% 0%, 100% 100%, ${percent}% 100%)`;
     }
   }
 
   public update(source: SourceImage | null, result: CompressionResult | null): void {
     const metaOrig = this.element.querySelector<HTMLElement>('#preview-meta-orig');
     const metaComp = this.element.querySelector<HTMLElement>('#preview-meta-comp');
+    const metaRes = this.element.querySelector<HTMLElement>('#preview-meta-res');
 
     if (!source) {
       if (this.originalImg) this.originalImg.src = '';
       if (this.compressedImg) this.compressedImg.src = '';
       if (metaOrig) metaOrig.textContent = 'Original: 0 B';
       if (metaComp) metaComp.textContent = 'Compressed: 0 B';
+      if (metaRes) metaRes.textContent = '-- × --';
       return;
     }
 
@@ -143,7 +284,12 @@ export class SinglePreview {
       this.originalImg.src = source.originalUrl;
     }
     if (metaOrig) {
-      metaOrig.textContent = `Original: ${formatBytes(source.size)} (${formatDimensions(source.dimensions.width, source.dimensions.height)})`;
+      metaOrig.textContent = `Original: ${formatBytes(source.size)}`;
+    }
+
+    if (metaRes) {
+      const origMp = ((source.dimensions.width * source.dimensions.height) / 1e6).toFixed(1);
+      metaRes.textContent = `${source.dimensions.width}×${source.dimensions.height} (${origMp} MP)`;
     }
 
     if (result) {
@@ -151,11 +297,15 @@ export class SinglePreview {
         this.compressedImg.src = result.objectUrl;
       }
       if (metaComp) {
-        metaComp.textContent = `Compressed: ${formatBytes(result.outputSize)} (${formatDimensions(result.dimensions.width, result.dimensions.height)})`;
+        metaComp.textContent = `Compressed: ${formatBytes(result.outputSize)}`;
+      }
+      if (metaRes) {
+        const outMp = ((result.dimensions.width * result.dimensions.height) / 1e6).toFixed(1);
+        metaRes.textContent = `${formatDimensions(result.dimensions.width, result.dimensions.height)} (${outMp} MP)`;
       }
     } else {
       if (this.compressedImg) {
-        this.compressedImg.src = source.originalUrl; // Show original until compressed
+        this.compressedImg.src = source.originalUrl;
       }
       if (metaComp) {
         metaComp.textContent = 'Compressing...';

@@ -36,9 +36,9 @@ export class AppController {
     const caps = HardwareGovernor.getCapabilities();
     HardwareGovernor.applyProfileDOMHints();
 
-    const memStr = caps.deviceMemoryGB ? `${caps.deviceMemoryGB}GB RAM` : 'RAM Managed';
-    const coreStr = `${caps.hardwareConcurrency} Cores`;
-    this.hardwareTextEl.textContent = `${caps.profile} (${coreStr} • ${memStr})`;
+    const memStr = caps.memoryLabel || (caps.deviceMemoryGB ? `${caps.deviceMemoryGB}GB RAM` : 'RAM Managed');
+    const threadStr = caps.threadsLabel || `${caps.hardwareConcurrency} Threads`;
+    this.hardwareTextEl.textContent = `${caps.profile} (${threadStr} • ${memStr})`;
   }
 
   private initIngestion(): void {

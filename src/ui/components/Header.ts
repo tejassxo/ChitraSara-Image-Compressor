@@ -17,9 +17,11 @@ export class Header {
     const caps = HardwareGovernor.getCapabilities();
     const platform = caps.platform || 'Universal';
     const memStr = caps.memoryLabel || (caps.deviceMemoryGB ? `${caps.deviceMemoryGB} GB RAM` : 'Dynamic Memory');
-    const coreStr = `${caps.hardwareConcurrency} Cores`;
+    const threadStr = caps.threadsLabel || `${caps.hardwareConcurrency} Threads`;
     const workersStr = `${caps.workerCount} Workers`;
     const gpuStr = caps.gpuRenderer || 'GPU Accelerated';
+    const cpuTooltip = caps.cpuTooltip || `Hardware Concurrency: ${caps.hardwareConcurrency} Threads`;
+    const memTooltip = caps.memoryTooltip || `${memStr} (System Memory)`;
 
     this.element.innerHTML = `
       <div class="brand">
@@ -45,20 +47,20 @@ export class Header {
           <span class="pill-strong">${platform}</span>
         </div>
 
-        <div class="telemetry-pill" title="Hardware Concurrency">
+        <div class="telemetry-pill" title="${cpuTooltip}">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="4" y="4" width="16" height="16" rx="2" />
             <rect x="9" y="9" width="6" height="6" />
             <path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 15h3M1 9h3M1 15h3" />
           </svg>
-          <span>${coreStr}</span>
+          <span>${threadStr}</span>
         </div>
 
-        <div class="telemetry-pill" title="System Memory &amp; Heap">
+        <div class="telemetry-pill" title="${memTooltip}">
           <span>${memStr}</span>
         </div>
 
-        <div class="telemetry-pill" title="Off-Thread Concurrency Workers">
+        <div class="telemetry-pill" title="Web Worker Pool Concurrency">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
           </svg>
