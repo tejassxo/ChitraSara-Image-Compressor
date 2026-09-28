@@ -2,6 +2,7 @@ import { FormatProbe } from '../../core/engine/FormatProbe';
 import { appStore } from '../../state/store';
 import type { CompressionMode, SupportedMimeType } from '../../types';
 import { calculateTargetDimensions } from '../../utils/math';
+import { formatAspectRatio } from '../../utils/dimensions';
 
 export class ControlsPanel {
   private element: HTMLElement;
@@ -332,12 +333,16 @@ export class ControlsPanel {
           qualityBox?.classList.remove('hidden');
           targetSizeBox?.classList.add('hidden');
           appStore.updateOptions({ mode: 'quality', targetBytes: undefined });
-        } else {
+        } else if (mode === 'targetSize') {
           qualityBox?.classList.add('hidden');
           targetSizeBox?.classList.remove('hidden');
           const activePreset = this.element.querySelector<HTMLButtonElement>('.quick-size-pills .pill-preset.active');
           const bytes = activePreset ? parseInt(activePreset.getAttribute('data-bytes') || '102400', 10) : 102400;
           appStore.updateOptions({ mode: 'targetSize', targetBytes: bytes });
+        } else if (mode === 'lossless') {
+          qualityBox?.classList.add('hidden');
+          targetSizeBox?.classList.add('hidden');
+          appStore.updateOptions({ mode: 'lossless', targetBytes: undefined });
         }
 
         if (appStore.getState().autoProcess) {
@@ -572,16 +577,24 @@ export class ControlsPanel {
       }
     });
 
-    manualBtn?.addEventListener('click', () => {
-      this.onTrigger();
+    // Allow Upscale Toggle
+    const allowUpscaleToggle = this.element.querySelector<HTMLInputElement>('#allow-upscale-toggle');
+    allowUpscaleToggle?.addEventListener('change', () => {
+      this.applyCustomDims();
     });
   }
 
   private applyCustomDims(): void {
     const customW = this.element.querySelector<HTMLInputElement>('#dim-custom-w');
     const customH = this.element.querySelector<HTMLInputElement>('#dim-custom-h');
+    const allowUpscaleToggle = this.element.querySelector<HTMLInputElement>('#allow-upscale-toggle');
+    const aspectIndicator = this.element.querySelector<HTMLElement>('#aspect-ratio-indicator');
     const w = parseInt(customW?.value || '0', 10);
     const h = parseInt(customH?.value || '0', 10);
+
+    if (aspectIndicator && w > 0 && h > 0) {
+      aspectIndicator.textContent = `Aspect Ratio: ${formatAspectRatio(w, h)}`;
+    }
 
     if (w > 0 || h > 0) {
       appStore.updateOptions({
@@ -590,6 +603,8 @@ export class ControlsPanel {
           maxWidth: w > 0 ? w : undefined,
           maxHeight: h > 0 ? h : undefined,
           maintainAspectRatio: this.aspectLocked,
+          allowUpscale: allowUpscaleToggle?.checked || false,
+          preventUpscale: !allowUpscaleToggle?.checked,
         },
       });
       this.updateResolutionDelta();
