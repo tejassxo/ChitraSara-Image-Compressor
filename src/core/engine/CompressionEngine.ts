@@ -2,6 +2,9 @@ import { MIME_TO_EXTENSION, SUPPORTED_MIME_TYPES, type SupportedMimeType } from 
 import type { CompressionOptions, CompressionResult, ImageDimensions } from '../../types';
 import { calculateTargetDimensions, clamp } from '../../utils/math';
 import { HardwareGovernor } from '../governor/HardwareGovernor';
+import { CanvasRasterizer } from './CanvasRasterizer';
+import { TargetSizeSolver } from '../solver/TargetSizeSolver';
+import { MemoryLifecycle } from '../../services/lifecycle';
 
 export class CompressionEngine {
   /**
@@ -67,15 +70,35 @@ export class CompressionEngine {
         caps.maxCanvasDimension
       );
 
-      // 4. Rasterize onto Canvas (OffscreenCanvas with DOM Canvas fallback)
-      const blob = await this.renderAndEncode(
-        bitmap || fallbackImg!,
-        targetDims,
-        targetFormat,
-        quality,
-        caps.hasOffscreenCanvas && caps.hasConvertToBlob,
-        signal
-      );
+      const drawable: CanvasImageSource = bitmap || fallbackImg!;
+      let blob: Blob;
+      let finalDims: ImageDimensions = targetDims;
+      let iterationsCount = 1;
+      let downscaled = false;
+
+      // 4. Check if Target Size Solver is requested
+      if (options.mode === 'targetSize' && options.targetBytes && options.targetBytes > 0) {
+        const solverResult = await TargetSizeSolver.solve({
+          sourceImage: drawable,
+          targetBytes: options.targetBytes,
+          format: targetFormat,
+          maxDimensions: targetDims,
+          signal,
+        });
+        blob = solverResult.finalBlob;
+        finalDims = solverResult.finalDimensions;
+        iterationsCount = solverResult.iterationsCount;
+        downscaled = solverResult.downscaled;
+      } else {
+        // Rasterize onto Canvas (OffscreenCanvas with DOM Canvas fallback)
+        blob = await CanvasRasterizer.renderAndEncode(drawable, {
+          dimensions: targetDims,
+          format: targetFormat,
+          quality,
+          useOffscreen: caps.hasOffscreenCanvas && caps.hasConvertToBlob,
+          signal,
+        });
+      }
 
       if (signal?.aborted) {
         throw new DOMException('Compression aborted by user', 'AbortError');
@@ -93,13 +116,14 @@ export class CompressionEngine {
       const ext = MIME_TO_EXTENSION[targetFormat] || 'jpg';
       const outputFilename = `${cleanBaseName}.min.${ext}`;
 
-      const objectUrl = URL.createObjectURL(blob);
+      const rawObjectUrl = URL.createObjectURL(blob);
+      const objectUrl = MemoryLifecycle.trackUrl(rawObjectUrl);
 
       return {
         blob,
         objectUrl,
         format: targetFormat,
-        dimensions: targetDims,
+        dimensions: finalDims,
         sourceSize,
         outputSize,
         bytesSaved,
@@ -107,6 +131,8 @@ export class CompressionEngine {
         compressionRatio,
         latencyMs,
         filename: outputFilename,
+        iterationsCount,
+        downscaled,
       };
     } finally {
       // Deterministic cleanup invariant: close bitmap & revoke temporary URLs
@@ -122,81 +148,6 @@ export class CompressionEngine {
       }
       if (fallbackImg) {
         fallbackImg.src = '';
-      }
-    }
-  }
-
-  /**
-   * Renders the frame onto canvas and encodes to Blob with canvas zeroing
-   */
-  private static async renderAndEncode(
-    sourceDrawable: ImageBitmap | HTMLImageElement,
-    dimensions: ImageDimensions,
-    format: SupportedMimeType,
-    quality: number,
-    useOffscreen: boolean,
-    signal?: AbortSignal
-  ): Promise<Blob> {
-    if (signal?.aborted) {
-      throw new DOMException('Compression aborted by user', 'AbortError');
-    }
-
-    if (useOffscreen && typeof OffscreenCanvas !== 'undefined') {
-      const offscreen = new OffscreenCanvas(dimensions.width, dimensions.height);
-      const ctx = offscreen.getContext('2d', { alpha: format !== 'image/jpeg' });
-      if (!ctx) {
-        throw new Error('Failed to create 2D rendering context on OffscreenCanvas');
-      }
-
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
-      ctx.drawImage(sourceDrawable, 0, 0, dimensions.width, dimensions.height);
-
-      try {
-        const blob = await offscreen.convertToBlob({
-          type: format,
-          quality: format === 'image/png' ? undefined : quality,
-        });
-        return blob;
-      } finally {
-        // Zero out dimensions to release GPU canvas buffer memory immediately
-        offscreen.width = 0;
-        offscreen.height = 0;
-      }
-    } else {
-      // Detached DOM Canvas Fallback
-      const canvas = document.createElement('canvas');
-      canvas.width = dimensions.width;
-      canvas.height = dimensions.height;
-      const ctx = canvas.getContext('2d', { alpha: format !== 'image/jpeg' });
-      if (!ctx) {
-        throw new Error('Failed to create 2D rendering context on HTMLCanvasElement');
-      }
-
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
-      ctx.drawImage(sourceDrawable, 0, 0, dimensions.width, dimensions.height);
-
-      try {
-        const blob = await new Promise<Blob>((resolve, reject) => {
-          if (signal?.aborted) {
-            reject(new DOMException('Compression aborted by user', 'AbortError'));
-            return;
-          }
-          canvas.toBlob(
-            (b) => {
-              if (b) resolve(b);
-              else reject(new Error(`Failed to encode image to ${format}`));
-            },
-            format,
-            format === 'image/png' ? undefined : quality
-          );
-        });
-        return blob;
-      } finally {
-        // Zero out dimensions to release GPU canvas buffer memory immediately
-        canvas.width = 0;
-        canvas.height = 0;
       }
     }
   }

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { Store } from '../src/state/Store';
+import { Store } from '../src/state/store';
 
 describe('Store - Zero-Dependency Reactive Pub-Sub', () => {
   it('initializes with default options and autoProcess enabled', () => {

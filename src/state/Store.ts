@@ -1,5 +1,12 @@
 import { ENGINE_DEFAULTS } from '../config/constants';
-import type { CompressionOptions, CompressionResult, SourceImage } from '../types';
+import { MemoryLifecycle } from '../services/lifecycle';
+import type {
+  BatchItem,
+  CompressionOptions,
+  CompressionResult,
+  QueueMetrics,
+  SourceImage,
+} from '../types';
 
 export interface AppState {
   sourceImage: SourceImage | null;
@@ -9,6 +16,11 @@ export interface AppState {
   options: CompressionOptions;
   autoProcess: boolean;
   activePreviewTab: 'compressed' | 'original';
+  // Phase 2 Batch & Queue State
+  batchItems: BatchItem[];
+  activeBatchItemId: string | null;
+  queueMetrics: QueueMetrics;
+  isBatchMode: boolean;
 }
 
 export type StateListener = (state: AppState, prevState: AppState) => void;
@@ -26,6 +38,7 @@ export class Store {
       options: {
         format: 'original',
         quality: ENGINE_DEFAULTS.DEFAULT_QUALITY,
+        mode: 'quality',
         resize: {
           mode: 'original',
           maintainAspectRatio: true,
@@ -33,6 +46,20 @@ export class Store {
       },
       autoProcess: ENGINE_DEFAULTS.AUTO_PROCESS_DEFAULT,
       activePreviewTab: 'compressed',
+      batchItems: [],
+      activeBatchItemId: null,
+      queueMetrics: {
+        totalFiles: 0,
+        processedFiles: 0,
+        failedFiles: 0,
+        totalOriginalBytes: 0,
+        totalCompressedBytes: 0,
+        totalSavedBytes: 0,
+        averageRatio: 1,
+        isPaused: false,
+        activeWorkers: 0,
+      },
+      isBatchMode: false,
       ...initialState,
     };
   }
@@ -77,13 +104,107 @@ export class Store {
     }
   }
 
+  public addBatchItem(item: BatchItem): void {
+    const updated = [...this.state.batchItems, item];
+    const isBatchMode = updated.length > 1;
+    this.setState({
+      batchItems: updated,
+      isBatchMode,
+    });
+    this.recalculateMetrics();
+  }
+
+  public updateBatchItem(id: string, partial: Partial<BatchItem>): void {
+    const updated = this.state.batchItems.map((item) =>
+      item.id === id ? { ...item, ...partial } : item
+    );
+    this.setState({ batchItems: updated });
+    this.recalculateMetrics();
+  }
+
+  public removeBatchItem(id: string): void {
+    const item = this.state.batchItems.find((i) => i.id === id);
+    if (item?.thumbnailUrl && item.thumbnailUrl.startsWith('blob:')) {
+      MemoryLifecycle.revokeUrl(item.thumbnailUrl);
+    }
+    if (item?.result?.objectUrl) {
+      MemoryLifecycle.revokeUrl(item.result.objectUrl);
+    }
+
+    const updated = this.state.batchItems.filter((i) => i.id !== id);
+    const isBatchMode = updated.length > 1;
+    const activeBatchItemId =
+      this.state.activeBatchItemId === id ? (updated[0]?.id ?? null) : this.state.activeBatchItemId;
+
+    this.setState({
+      batchItems: updated,
+      isBatchMode,
+      activeBatchItemId,
+    });
+    this.recalculateMetrics();
+  }
+
+  public clearBatch(): void {
+    for (const item of this.state.batchItems) {
+      if (item.thumbnailUrl && item.thumbnailUrl.startsWith('blob:')) {
+        MemoryLifecycle.revokeUrl(item.thumbnailUrl);
+      }
+      if (item.result?.objectUrl) {
+        MemoryLifecycle.revokeUrl(item.result.objectUrl);
+      }
+    }
+
+    this.setState({
+      batchItems: [],
+      activeBatchItemId: null,
+      isBatchMode: false,
+    });
+    this.recalculateMetrics();
+  }
+
+  public recalculateMetrics(): void {
+    const items = this.state.batchItems;
+    let totalOriginal = 0;
+    let totalCompressed = 0;
+    let processed = 0;
+    let failed = 0;
+
+    for (const item of items) {
+      totalOriginal += item.originalSize;
+      if (item.status === 'COMPLETED' && item.result) {
+        processed++;
+        totalCompressed += item.result.outputSize;
+      } else if (item.status === 'FAILED') {
+        failed++;
+      }
+    }
+
+    const totalSaved = Math.max(0, totalOriginal - totalCompressed);
+    const ratio = totalCompressed > 0 ? totalOriginal / totalCompressed : 1;
+
+    this.setState({
+      queueMetrics: {
+        ...this.state.queueMetrics,
+        totalFiles: items.length,
+        processedFiles: processed,
+        failedFiles: failed,
+        totalOriginalBytes: totalOriginal,
+        totalCompressedBytes: totalCompressed,
+        totalSavedBytes: totalSaved,
+        averageRatio: Math.round(ratio * 10) / 10,
+      },
+    });
+  }
+
   public reset(): void {
     if (this.state.sourceImage?.originalUrl) {
-      URL.revokeObjectURL(this.state.sourceImage.originalUrl);
+      MemoryLifecycle.revokeUrl(this.state.sourceImage.originalUrl);
     }
     if (this.state.compressionResult?.objectUrl) {
-      URL.revokeObjectURL(this.state.compressionResult.objectUrl);
+      MemoryLifecycle.revokeUrl(this.state.compressionResult.objectUrl);
     }
+
+    this.clearBatch();
 
     this.setState({
       sourceImage: null,
@@ -91,6 +212,8 @@ export class Store {
       isProcessing: false,
       error: null,
       activePreviewTab: 'compressed',
+      activeBatchItemId: null,
+      isBatchMode: false,
     });
   }
 }

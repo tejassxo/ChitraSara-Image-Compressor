@@ -1,16 +1,21 @@
-import { AppController } from './ui/AppController';
-import { $ } from './utils/dom';
+import { App } from './ui/App';
+import { HardwareGovernor } from './core/governor/HardwareGovernor';
 
-// Global Error Boundary & Initialization
+// Application Bootstrap & Global Error Boundary
 window.addEventListener('DOMContentLoaded', () => {
   try {
-    new AppController();
-    console.log('⚡ OptiPulse Phase 1 Engine initialized successfully.');
-  } catch (err: any) {
+    HardwareGovernor.applyProfileDOMHints();
+    const appContainer = document.querySelector<HTMLElement>('#app');
+    if (appContainer) {
+      new App(appContainer);
+      console.log('⚡ OptiPulse Pro Engine initialized.');
+    }
+  } catch (err: unknown) {
     console.error('Fatal initialization error:', err);
-    const errorBanner = $('#error-banner');
+    const errorBanner = document.querySelector<HTMLElement>('#error-banner');
     if (errorBanner) {
-      errorBanner.textContent = `Initialization Error: ${err.message || err}`;
+      const msg = err instanceof Error ? err.message : String(err);
+      errorBanner.textContent = `Initialization Error: ${msg}`;
       errorBanner.classList.remove('hidden');
     }
   }
@@ -19,9 +24,10 @@ window.addEventListener('DOMContentLoaded', () => {
 // Window-level unhandled rejection guard
 window.addEventListener('unhandledrejection', (event) => {
   console.error('Unhandled async rejection:', event.reason);
-  const errorBanner = $('#error-banner');
+  const errorBanner = document.querySelector<HTMLElement>('#error-banner');
   if (errorBanner) {
-    errorBanner.textContent = `Error: ${event.reason?.message || event.reason || 'Unexpected failure'}`;
+    const reasonMsg = event.reason instanceof Error ? event.reason.message : String(event.reason || 'Unexpected failure');
+    errorBanner.textContent = `Error: ${reasonMsg}`;
     errorBanner.classList.remove('hidden');
   }
 });

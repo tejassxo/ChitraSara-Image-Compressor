@@ -1,6 +1,6 @@
 import type { SupportedMimeType } from '../config/constants';
 import { FormatProber } from '../core/engine/FormatProber';
-import { appStore } from '../state/Store';
+import { appStore } from '../state/store';
 import type { CompressionOptions, FormatSupportInfo } from '../types';
 import { $, $$ } from '../utils/dom';
 

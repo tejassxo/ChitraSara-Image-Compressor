@@ -1,4 +1,4 @@
-import { appStore } from '../state/Store';
+import { appStore } from '../state/store';
 import type { CompressionResult, SourceImage } from '../types';
 import { $, $$ } from '../utils/dom';
 import { formatDimensions } from '../utils/formatters';

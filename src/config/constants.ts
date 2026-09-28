@@ -2,29 +2,7 @@
  * Immutable Configuration Constants for OptiPulse Compression Engine
  */
 
-export const SUPPORTED_MIME_TYPES = [
-  'image/jpeg',
-  'image/png',
-  'image/webp',
-  'image/avif',
-] as const;
-
-export type SupportedMimeType = typeof SUPPORTED_MIME_TYPES[number];
-
-export const MIME_TO_EXTENSION: Record<SupportedMimeType, string> = {
-  'image/jpeg': 'jpg',
-  'image/png': 'png',
-  'image/webp': 'webp',
-  'image/avif': 'avif',
-};
-
-export const EXTENSION_TO_MIME: Record<string, SupportedMimeType> = {
-  jpg: 'image/jpeg',
-  jpeg: 'image/jpeg',
-  png: 'image/png',
-  webp: 'image/webp',
-  avif: 'image/avif',
-};
+export * from './mime';
 
 export const HARDWARE_THRESHOLDS = {
   LOW_RAM_GB: 2,
@@ -35,6 +13,11 @@ export const HARDWARE_THRESHOLDS = {
   MAX_CANVAS_DIM_BALANCED: 4096,
   MAX_CANVAS_DIM_HIGH: 8192,
   DEFAULT_FALLBACK_CORES: 2,
+  WORKER_LIMIT_LOW: 1,
+  WORKER_LIMIT_BALANCED_MAX: 3,
+  WORKER_LIMIT_HIGH_MAX: 6,
+  THUMBNAIL_MAX_DIM_LOW: 80,
+  THUMBNAIL_MAX_DIM_DEFAULT: 160,
 } as const;
 
 export const ENGINE_DEFAULTS = {
@@ -43,4 +26,27 @@ export const ENGINE_DEFAULTS = {
   MAX_QUALITY: 1.0,
   STEP_DOWN_THRESHOLD_PIXELS: 4096 * 4096, // 16MP threshold for memory step-down
   AUTO_PROCESS_DEFAULT: true,
+} as const;
+
+export const SOLVER_DEFAULTS = {
+  MIN_QUALITY: 0.15,
+  MAX_QUALITY: 1.0,
+  DEFAULT_TOLERANCE_RATIO: 0.05, // +/- 5%
+  DEFAULT_MAX_ITERATIONS: 7,
+  MIN_DIMENSION_WIDTH: 320,
+  MIN_DIMENSION_HEIGHT: 320,
+  DOWNSCALE_STEP_FACTOR: 0.80,
+  MAX_TOTAL_ATTEMPTS: 15,
+} as const;
+
+export const WORKER_CONSTANTS = {
+  TASK_TIMEOUT_MS: 30000,
+  MAX_RETRY_COUNT: 2,
+  IDLE_RECLAMATION_MS: 30000,
+} as const;
+
+export const QUEUE_LIMITS = {
+  MAX_CONCURRENT_DISPATCH_LOW: 1,
+  MAX_CONCURRENT_DISPATCH_BALANCED: 3,
+  MAX_CONCURRENT_DISPATCH_HIGH: 6,
 } as const;

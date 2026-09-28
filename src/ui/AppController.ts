@@ -1,7 +1,7 @@
 import { CompressionEngine } from '../core/engine/CompressionEngine';
 import { HardwareGovernor } from '../core/governor/HardwareGovernor';
 import { IngestionService } from '../services/IngestionService';
-import { appStore, type AppState } from '../state/Store';
+import { appStore, type AppState } from '../state/store';
 import { $ } from '../utils/dom';
 import { ControlPanel } from './ControlPanel';
 import { PreviewViewport } from './PreviewViewport';
@@ -45,7 +45,15 @@ export class AppController {
     const dropzoneEl = $<HTMLElement>('#dropzone');
     const fileInputEl = $<HTMLInputElement>('#file-input');
 
-    IngestionService.setupIngestionListeners(dropzoneEl, fileInputEl);
+    IngestionService.setupIngestionListeners(dropzoneEl, fileInputEl, (files) => {
+      if (files[0]) {
+        IngestionService.ingestFile(files[0]).then((sourceImage) => {
+          appStore.setState({ sourceImage, error: null });
+        }).catch((err: unknown) => {
+          appStore.setState({ error: err instanceof Error ? err.message : String(err) });
+        });
+      }
+    });
   }
 
   private subscribeToStore(): void {
@@ -118,15 +126,16 @@ export class AppController {
         compressionResult: result,
         isProcessing: false,
       });
-    } catch (err: any) {
-      if (err.name === 'AbortError') {
+    } catch (err: unknown) {
+      if (err instanceof DOMException && err.name === 'AbortError') {
         // Normal cancellation path, do not display error banner
         return;
       }
       console.error('Compression failure:', err);
+      const msg = err instanceof Error ? err.message : String(err);
       appStore.setState({
         isProcessing: false,
-        error: err.message || 'Compression failed',
+        error: msg || 'Compression failed',
       });
     } finally {
       if (this.activeAbortController?.signal === signal) {

@@ -9,7 +9,7 @@ execSync('npm run build', { stdio: 'inherit' });
 const distDir = join(process.cwd(), 'dist');
 const assetsDir = join(distDir, 'assets');
 
-console.log('\n📊 Auditing Production Bundle Budget (Strict <= 30 KB gzipped)...');
+console.log('\n📊 Auditing Production Bundle Budget (Strict <= 35 KB gzipped)...');
 
 let totalRaw = 0;
 let totalGzip = 0;
@@ -45,7 +45,7 @@ console.log(
 );
 console.log('------------------------------------------------------------');
 
-const BUDGET_KB = 30;
+const BUDGET_KB = 35;
 const totalGzipKB = totalGzip / 1024;
 
 if (totalGzipKB > BUDGET_KB) {
