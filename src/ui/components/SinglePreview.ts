@@ -8,8 +8,7 @@ export class SinglePreview {
   private splitHairline: HTMLElement | null = null;
   private isDragging = false;
   private loaderEl: HTMLElement | null = null;
-  private currentZoom = 1; // 1 = fit, 2 = 100%, 3 = 200%
-  private isFit = true;
+  private currentZoom = 1;
   private viewMode: 'split' | 'toggle' = 'split';
   private showingOriginalInToggle = false;
 
@@ -196,21 +195,18 @@ export class SinglePreview {
         const z = btn.getAttribute('data-zoom');
 
         if (z === 'fit') {
-          this.isFit = true;
           this.currentZoom = 1;
           if (zoomContainer) {
             zoomContainer.style.transform = 'scale(1)';
             zoomContainer.style.cursor = 'default';
           }
         } else if (z === '1') {
-          this.isFit = false;
           this.currentZoom = 1.35;
           if (zoomContainer) {
             zoomContainer.style.transform = `scale(${this.currentZoom})`;
             zoomContainer.style.cursor = 'grab';
           }
         } else if (z === '2') {
-          this.isFit = false;
           this.currentZoom = 2.0;
           if (zoomContainer) {
             zoomContainer.style.transform = `scale(${this.currentZoom})`;
