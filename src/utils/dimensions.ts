@@ -34,12 +34,13 @@ export function calculateContainDimensions(
   const origH = Math.max(1, Math.round(original.height));
   const aspectRatio = origW / origH;
 
-  const targetW = target.width !== undefined && target.width > 0 ? target.width : origW;
-  const targetH = target.height !== undefined && target.height > 0 ? target.height : origH;
-
-  const scaleX = targetW / origW;
-  const scaleY = targetH / origH;
+  const scaleX = target.width !== undefined && target.width > 0 ? target.width / origW : Infinity;
+  const scaleY = target.height !== undefined && target.height > 0 ? target.height / origH : Infinity;
   let scale = Math.min(scaleX, scaleY);
+
+  if (!isFinite(scale)) {
+    scale = 1.0;
+  }
 
   let isUpscaled = false;
   if (scale > 1) {
