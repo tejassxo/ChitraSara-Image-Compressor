@@ -10,7 +10,7 @@ export class Dropzone {
     this.fileInput = document.createElement('input');
     this.fileInput.type = 'file';
     this.fileInput.multiple = true;
-    this.fileInput.accept = 'image/jpeg,image/png,image/webp,image/avif';
+    this.fileInput.accept = 'image/jpeg,image/png,image/webp,image/avif,image/gif,image/svg+xml,.jpg,.jpeg,.png,.webp,.avif';
     this.fileInput.className = 'visually-hidden';
 
     this.render();
@@ -25,7 +25,7 @@ export class Dropzone {
     this.element.innerHTML = `
       <div class="dropzone-card" id="dropzone" tabindex="0" role="button" aria-label="Drop images or browse">
         <div class="dropzone-icon">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
             <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
             <circle cx="9" cy="9" r="2" />
             <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
@@ -33,14 +33,14 @@ export class Dropzone {
         </div>
         <div class="dropzone-content">
           <div class="dropzone-headline">
-            <span class="dropzone-primary-action">Select images</span> or drop here
+            <span class="dropzone-primary-action">Select images</span> or drag &amp; drop here
           </div>
           <div class="dropzone-meta">
             <span>Supports JPEG, PNG, WebP, AVIF</span>
             <span class="divider-dot">•</span>
             <span>Batch &amp; Multi-thread processing</span>
-            <span class="divider-dot">•</span>
-            <span><kbd>Ctrl</kbd>+<kbd>V</kbd> to paste</span>
+            <span class="divider-dot dropzone-meta-desktop">•</span>
+            <span class="dropzone-meta-desktop"><kbd>Ctrl</kbd>+<kbd>V</kbd> to paste</span>
           </div>
         </div>
       </div>
