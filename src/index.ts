@@ -1,5 +1,9 @@
 import { App } from './ui/App';
 import { HardwareGovernor } from './core/governor/HardwareGovernor';
+import { injectSpeedInsights } from '@vercel/speed-insights';
+
+// Initialize Vercel Speed Insights
+injectSpeedInsights();
 
 // Application Bootstrap & Global Error Boundary
 window.addEventListener('DOMContentLoaded', () => {
