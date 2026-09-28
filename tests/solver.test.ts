@@ -93,4 +93,50 @@ describe('TargetSizeSolver - Binary Search & Progressive Downscaler', () => {
       })
     ).rejects.toThrow(/Invalid target bytes/);
   });
+
+  it('marks impossible target when even smallest candidate cannot reach target', async () => {
+    // Mock encoder: absolute minimum size is 25 KB regardless of dimensions
+    const mockEncode = async (): Promise<Blob> => {
+      return new Blob([new Uint8Array(25 * 1024)], { type: 'image/jpeg' });
+    };
+
+    const result = await TargetSizeSolver.solve({
+      sourceImage: {} as CanvasImageSource,
+      targetBytes: 10 * 1024, // 10 KB target (impossible because min is 25 KB)
+      format: 'image/jpeg',
+      maxDimensions: { width: 1920, height: 1080 },
+      encodeOverride: mockEncode,
+    });
+
+    expect(result.targetAchieved).toBe(false);
+    expect(result.impossibleTarget).toBe(true);
+    expect(result.targetMessage).toBeDefined();
+    expect(result.targetMessage).toContain('Target not safely achievable');
+    expect(result.targetMessage).toContain('Best validated result');
+  });
+
+  it('handles large target size easily with high quality and no downscaling', async () => {
+    const mockEncode = async (
+      _source: CanvasImageSource,
+      _dims: ImageDimensions,
+      _format: SupportedMimeType,
+      quality: number
+    ): Promise<Blob> => {
+      const sizeBytes = Math.round(500 * 1024 * quality);
+      return new Blob([new Uint8Array(sizeBytes)], { type: 'image/jpeg' });
+    };
+
+    const result = await TargetSizeSolver.solve({
+      sourceImage: {} as CanvasImageSource,
+      targetBytes: 1024 * 1024, // 1 MB target (well above 500 KB)
+      format: 'image/jpeg',
+      maxDimensions: { width: 1920, height: 1080 },
+      encodeOverride: mockEncode,
+    });
+
+    expect(result.targetAchieved).toBe(true);
+    expect(result.impossibleTarget).toBe(false);
+    expect(result.downscaled).toBe(false);
+    expect(result.finalQuality).toBeGreaterThan(0.9);
+  });
 });

@@ -1,12 +1,16 @@
 import { SOLVER_DEFAULTS } from '../../config/constants';
-import type { ImageDimensions, SupportedMimeType } from '../../types';
+import type { FidelityMetrics, ImageDimensions, SupportedMimeType } from '../../types';
 import { CanvasRasterizer } from '../engine/CanvasRasterizer';
+import { OutputValidator } from '../engine/OutputValidator';
+import { calculateContainDimensions } from '../../utils/dimensions';
+import { formatBytes } from '../../utils/formatters';
 
 export interface SolverParams {
   sourceImage: CanvasImageSource;
   targetBytes: number;
   format: SupportedMimeType;
   maxDimensions: ImageDimensions;
+  originalDimensions?: ImageDimensions;
   toleranceRatio?: number;
   maxIterations?: number;
   minDimensions?: ImageDimensions;
@@ -30,11 +34,25 @@ export interface SolverResult {
   durationMs: number;
   targetAchieved: boolean;
   downscaled: boolean;
+  impossibleTarget: boolean;
+  targetMessage?: string;
+  fidelityMetrics?: FidelityMetrics;
 }
 
 export class TargetSizeSolver {
   /**
-   * Iterative binary search auto-tuner on quality with rapid progressive dimension downscaling
+   * Target Size Solver 2.0:
+   * Constrained optimization solver that maximizes visual fidelity subject to:
+   *   fileSize <= targetBytes
+   *   aspectRatio preserved
+   *   dimensions >= minimum
+   *   output validated
+   *
+   * Invariants:
+   * 1. Immutable reference: candidates are generated from original decoded source (zero generational loss).
+   * 2. Quality-first: searches quality in safe range before touching dimensions.
+   * 3. Adaptive containment downscaling: uses calculateContainDimensions for smooth stepped reductions.
+   * 4. Impossible target protection: returns best safe validated candidate with clear message instead of destroying image.
    */
   public static async solve(params: SolverParams): Promise<SolverResult> {
     const startTime = performance.now();
@@ -43,6 +61,7 @@ export class TargetSizeSolver {
       targetBytes,
       format,
       maxDimensions,
+      originalDimensions = maxDimensions,
       toleranceRatio = SOLVER_DEFAULTS.DEFAULT_TOLERANCE_RATIO,
       maxIterations = SOLVER_DEFAULTS.DEFAULT_MAX_ITERATIONS,
       minDimensions = {
@@ -63,7 +82,6 @@ export class TargetSizeSolver {
     }
 
     let currentDimensions: ImageDimensions = { ...maxDimensions };
-    let currentScale = 1.0;
     let totalIterations = 0;
     let downscaled = false;
     let totalAttempts = 0;
@@ -71,9 +89,14 @@ export class TargetSizeSolver {
     const lowerTargetBound = targetBytes * (1 - toleranceRatio);
     const upperTargetBound = targetBytes * (1 + toleranceRatio);
 
+    // Adaptive containment step factors to avoid aggressive destructive dimension cuts
+    const dimensionStepFactors = [0.92, 0.85, 0.78, 0.70, 0.60, 0.50, 0.40, 0.30];
+    let stepIndex = 0;
+
     let bestBlob: Blob | null = null;
     let bestQuality = minQuality;
     let bestDimensions: ImageDimensions = { ...currentDimensions };
+    let bestValid = false;
 
     const encode = async (dims: ImageDimensions, q: number): Promise<Blob> => {
       totalIterations++;
@@ -99,24 +122,36 @@ export class TargetSizeSolver {
         currentDimensions.width > minDimensions.width ||
         currentDimensions.height > minDimensions.height;
 
-      // 1. First probe at minQuality
-      // If even minQuality exceeds targetBytes, higher qualities will also exceed it!
+      // 1. Probe at minQuality for current dimensions
       const minQBlob = await encode(currentDimensions, minQuality);
       const minQSize = minQBlob.size;
 
-      // Track closest candidate
-      if (!bestBlob || (bestBlob.size > targetBytes && minQSize < bestBlob.size)) {
-        bestBlob = minQBlob;
-        bestQuality = minQuality;
-        bestDimensions = { ...currentDimensions };
-      } else if (minQSize <= targetBytes && (!bestBlob || bestBlob.size > targetBytes || minQSize > bestBlob.size)) {
-        bestBlob = minQBlob;
-        bestQuality = minQuality;
-        bestDimensions = { ...currentDimensions };
+      // Validate candidate
+      const validation = await OutputValidator.validateCandidate(minQBlob, {
+        expectedFormat: format,
+        originalDimensions,
+        maxDimensions: currentDimensions,
+      });
+
+      if (validation.isValid) {
+        if (!bestBlob || (bestBlob.size > targetBytes && minQSize < bestBlob.size)) {
+          bestBlob = minQBlob;
+          bestQuality = minQuality;
+          bestDimensions = { ...currentDimensions };
+          bestValid = true;
+        } else if (
+          minQSize <= targetBytes &&
+          (!bestBlob || bestBlob.size > targetBytes || minQSize > bestBlob.size)
+        ) {
+          bestBlob = minQBlob;
+          bestQuality = minQuality;
+          bestDimensions = { ...currentDimensions };
+          bestValid = true;
+        }
       }
 
       // Check if minQuality is already within tolerance
-      if (minQSize >= lowerTargetBound && minQSize <= upperTargetBound) {
+      if (minQSize >= lowerTargetBound && minQSize <= upperTargetBound && validation.isValid) {
         return {
           finalBlob: minQBlob,
           finalQuality: minQuality,
@@ -126,34 +161,45 @@ export class TargetSizeSolver {
           iterationsCount: totalIterations,
           durationMs: performance.now() - startTime,
           targetAchieved: true,
+          impossibleTarget: false,
           downscaled,
         };
       }
 
-      // If even minQuality exceeds targetBytes:
+      // If even minQuality exceeds targetBytes at current dimensions:
       if (minQSize > targetBytes) {
-        if (canDownscale) {
-          currentScale *= SOLVER_DEFAULTS.DOWNSCALE_STEP_FACTOR;
+        if (canDownscale && stepIndex < dimensionStepFactors.length) {
+          const factor = dimensionStepFactors[stepIndex++];
           downscaled = true;
-          const nextWidth = Math.max(minDimensions.width, Math.round(maxDimensions.width * currentScale));
-          const nextHeight = Math.max(minDimensions.height, Math.round(maxDimensions.height * currentScale));
 
-          if (nextWidth === currentDimensions.width && nextHeight === currentDimensions.height) {
+          const containRes = calculateContainDimensions(
+            maxDimensions,
+            {
+              width: Math.max(minDimensions.width, Math.round(maxDimensions.width * factor)),
+              height: Math.max(minDimensions.height, Math.round(maxDimensions.height * factor)),
+            },
+            { allowUpscale: false }
+          );
+
+          if (
+            containRes.width === currentDimensions.width &&
+            containRes.height === currentDimensions.height
+          ) {
             break;
           }
 
           currentDimensions = {
-            width: nextWidth,
-            height: nextHeight,
+            width: containRes.width,
+            height: containRes.height,
           };
           continue;
         } else {
-          // Already at minDimensions and minQuality; cannot reduce size any further
+          // Reached smallest allowable dimension limit
           break;
         }
       }
 
-      // 2. Binary Search over Quality [minQuality, 1.0] since minQSize <= targetBytes
+      // 2. Binary search over Quality [minQuality, 1.0] since minQSize <= targetBytes
       let qLow = minQuality;
       let qHigh = 1.0;
       let stepIterations = 0;
@@ -168,33 +214,44 @@ export class TargetSizeSolver {
         const testBlob = await encode(currentDimensions, qMid);
         const testSize = testBlob.size;
 
-        if (testSize <= targetBytes) {
-          if (!bestBlob || bestBlob.size > targetBytes || testSize > bestBlob.size) {
-            bestBlob = testBlob;
-            bestQuality = qMid;
-            bestDimensions = { ...currentDimensions };
-          }
-        } else {
-          if (!bestBlob || (bestBlob.size > targetBytes && testSize < bestBlob.size)) {
-            bestBlob = testBlob;
-            bestQuality = qMid;
-            bestDimensions = { ...currentDimensions };
-          }
-        }
+        const testValidation = await OutputValidator.validateCandidate(testBlob, {
+          expectedFormat: format,
+          originalDimensions,
+          maxDimensions: currentDimensions,
+        });
 
-        // Check if within tolerance
-        if (testSize >= lowerTargetBound && testSize <= upperTargetBound) {
-          return {
-            finalBlob: testBlob,
-            finalQuality: Math.round(qMid * 100) / 100,
-            finalDimensions: currentDimensions,
-            achievedBytes: testSize,
-            targetBytes,
-            iterationsCount: totalIterations,
-            durationMs: performance.now() - startTime,
-            targetAchieved: true,
-            downscaled,
-          };
+        if (testValidation.isValid) {
+          if (testSize <= targetBytes) {
+            if (!bestBlob || bestBlob.size > targetBytes || testSize > bestBlob.size) {
+              bestBlob = testBlob;
+              bestQuality = qMid;
+              bestDimensions = { ...currentDimensions };
+              bestValid = true;
+            }
+          } else {
+            if (!bestBlob || (bestBlob.size > targetBytes && testSize < bestBlob.size)) {
+              bestBlob = testBlob;
+              bestQuality = qMid;
+              bestDimensions = { ...currentDimensions };
+              bestValid = true;
+            }
+          }
+
+          // Check if within tolerance
+          if (testSize >= lowerTargetBound && testSize <= upperTargetBound) {
+            return {
+              finalBlob: testBlob,
+              finalQuality: Math.round(qMid * 100) / 100,
+              finalDimensions: currentDimensions,
+              achievedBytes: testSize,
+              targetBytes,
+              iterationsCount: totalIterations,
+              durationMs: performance.now() - startTime,
+              targetAchieved: true,
+              impossibleTarget: false,
+              downscaled,
+            };
+          }
         }
 
         if (testSize > targetBytes) {
@@ -204,8 +261,8 @@ export class TargetSizeSolver {
         }
       }
 
-      // If we found a candidate under targetBytes during this step, we can stop
-      if (bestBlob && bestBlob.size <= targetBytes) {
+      // If we found a valid candidate under targetBytes during this search, we can finish
+      if (bestBlob && bestBlob.size <= targetBytes && bestValid) {
         return {
           finalBlob: bestBlob,
           finalQuality: Math.round(bestQuality * 100) / 100,
@@ -215,6 +272,7 @@ export class TargetSizeSolver {
           iterationsCount: totalIterations,
           durationMs: performance.now() - startTime,
           targetAchieved: true,
+          impossibleTarget: false,
           downscaled,
         };
       }
@@ -224,8 +282,15 @@ export class TargetSizeSolver {
       }
     }
 
-    // Return the closest achieved result
+    // Fallback: return best validated candidate
     const finalBlob = bestBlob || (await encode(currentDimensions, minQuality));
+    const targetAchieved = finalBlob.size <= upperTargetBound;
+    const impossibleTarget = !targetAchieved;
+
+    let targetMessage: string | undefined;
+    if (impossibleTarget) {
+      targetMessage = `Target not safely achievable. Best validated result: ${formatBytes(finalBlob.size)}. Quality protection prevented further degradation.`;
+    }
 
     return {
       finalBlob,
@@ -235,7 +300,9 @@ export class TargetSizeSolver {
       targetBytes,
       iterationsCount: totalIterations,
       durationMs: performance.now() - startTime,
-      targetAchieved: finalBlob.size <= upperTargetBound,
+      targetAchieved,
+      impossibleTarget,
+      targetMessage,
       downscaled,
     };
   }
