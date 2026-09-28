@@ -25,6 +25,46 @@ export interface AppState {
 
 export type StateListener = (state: AppState, prevState: AppState) => void;
 
+const SETTINGS_KEY = 'optipulse_settings_v1';
+
+export function loadStoredSettings(): { autoProcess?: boolean; options?: Partial<CompressionOptions> } {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      const raw = localStorage.getItem(SETTINGS_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        return {
+          autoProcess: typeof parsed.autoProcess === 'boolean' ? parsed.autoProcess : undefined,
+          options: parsed.options,
+        };
+      }
+    }
+  } catch {
+    // Ignore
+  }
+  return {};
+}
+
+export function saveStoredSettings(state: AppState): void {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(
+        SETTINGS_KEY,
+        JSON.stringify({
+          autoProcess: state.autoProcess,
+          options: {
+            format: state.options.format,
+            quality: state.options.quality,
+            mode: state.options.mode,
+          },
+        })
+      );
+    }
+  } catch {
+    // Ignore
+  }
+}
+
 export class Store {
   private state: AppState;
   private listeners: Set<StateListener> = new Set();
