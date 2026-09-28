@@ -162,7 +162,7 @@ interface UserRecipe {
     opacity: number;
     position: 'bottom-right' | 'bottom-left' | 'center' | 'top-right';
   };
-  customExifTag?: string; // e.g. "Creator: Tejas"
+  customExifTag?: string; // e.g. "Creator: M TEJAS YADAV"
 }
 ```
 

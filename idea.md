@@ -87,7 +87,7 @@ Engineered specifically as a personal powerhouse tool and portfolio centerpiece:
    * Switch active profile in 1-click or via hotkey.
 2. **Personal Signature & Watermark Studio:**
    * Add optional subtle watermark (text or custom PNG logo with opacity/position control).
-   * Embed custom personal EXIF signature (e.g., `Artist: Tejas`, `Software: Tejas Image Studio`).
+   * Embed custom personal EXIF signature (e.g., `Artist: M TEJAS YADAV`, `Software: ChitraSara Studio`).
 3. **Deep Theming & Aesthetic Customization:**
    * Curated high-contrast pro developer themes:
      * *Obsidian Emerald* (Default, ultra-sleek dark glassmorphism)
