@@ -37,7 +37,10 @@ export class ControlsPanel {
               Quality Mode
             </button>
             <button type="button" class="segmented-btn ${mode === 'targetSize' ? 'active' : ''}" data-mode="targetSize">
-              Target Size Mode
+              Target Size
+            </button>
+            <button type="button" class="segmented-btn ${mode === 'lossless' ? 'active' : ''}" data-mode="lossless">
+              Lossless
             </button>
           </div>
         </div>
@@ -103,6 +106,13 @@ export class ControlsPanel {
                 <span class="input-sub">Height (px)</span>
                 <input type="number" id="dim-custom-h" min="32" max="16384" placeholder="Height" class="pro-number-input" />
               </div>
+            </div>
+            <div class="custom-dims-subrow" style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 12px; color: var(--text-secondary);">
+              <span class="aspect-ratio-indicator" id="aspect-ratio-indicator">Aspect Ratio: --</span>
+              <label class="toggle-checkbox" for="allow-upscale-toggle" title="Allow scaling beyond natural dimensions (synthesizes new pixels)">
+                <input type="checkbox" id="allow-upscale-toggle" />
+                <span class="toggle-text">Allow upscaling</span>
+              </label>
             </div>
           </div>
 
@@ -199,6 +209,8 @@ export class ControlsPanel {
             </label>
           </div>
         </div>
+        <!-- 6. Safety Trade-off Alert Banner -->
+        <div class="safety-tradeoff-alert hidden" id="safety-tradeoff-alert" style="margin-top: 12px; padding: 12px 14px; border-radius: 8px; font-size: 13px; line-height: 1.4;"></div>
       </div>
 
       <!-- Action Footer -->
@@ -238,6 +250,31 @@ export class ControlsPanel {
             wInput.value = String(state.sourceImage.dimensions.width);
             hInput.value = String(state.sourceImage.dimensions.height);
           }
+        }
+      }
+
+      // Update safety trade-off alert banner
+      const alertEl = this.element.querySelector<HTMLElement>('#safety-tradeoff-alert');
+      if (alertEl) {
+        const res = state.compressionResult;
+        if (res && res.impossibleTarget && res.targetMessage) {
+          alertEl.classList.remove('hidden');
+          alertEl.style.display = 'block';
+          alertEl.style.background = 'rgba(239, 68, 68, 0.15)';
+          alertEl.style.border = '1px solid rgba(239, 68, 68, 0.35)';
+          alertEl.style.color = '#fca5a5';
+          alertEl.innerHTML = `<strong>⚠️ Quality Protection:</strong> ${res.targetMessage}`;
+        } else if (res && res.downscaled && state.options.mode === 'targetSize') {
+          alertEl.classList.remove('hidden');
+          alertEl.style.display = 'block';
+          alertEl.style.background = 'rgba(245, 158, 11, 0.12)';
+          alertEl.style.border = '1px solid rgba(245, 158, 11, 0.3)';
+          alertEl.style.color = '#fde68a';
+          alertEl.innerHTML = `<strong>ℹ️ Dimension Trade-off:</strong> Target achieved by containing dimensions to ${res.dimensions.width}×${res.dimensions.height} px to protect visual identity.`;
+        } else {
+          alertEl.classList.add('hidden');
+          alertEl.style.display = 'none';
+          alertEl.textContent = '';
         }
       }
     });

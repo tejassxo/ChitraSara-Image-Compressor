@@ -3,7 +3,7 @@ import { WorkerPool } from '../core/workers/WorkerPool';
 import { IngestionService } from '../services/ingestion';
 import { MemoryLifecycle } from '../services/lifecycle';
 import { HardwareGovernor } from '../core/governor/HardwareGovernor';
-import { calculateTargetDimensions } from '../utils/math';
+import { QualityPreservationEngine } from '../core/engine/QualityPreservationEngine';
 import type { BatchItem, SupportedMimeType, TaskEnvelope } from '../types';
 
 let activeWorkerDispatches = 0;
@@ -108,13 +108,17 @@ export class BatchActions {
       const dims = await IngestionService.extractDimensions(item.file);
       appStore.updateBatchItem(id, { originalDimensions: dims, progress: 30 });
 
-      const state = appStore.getState();
-      const caps = HardwareGovernor.getCapabilities();
-      const targetDims = calculateTargetDimensions(dims, state.options.resize, caps.maxCanvasDimension);
-
       const mime = (item.file.type as SupportedMimeType) || 'image/jpeg';
-      const targetFormat: SupportedMimeType =
-        state.options.format === 'original' ? mime : state.options.format;
+      const plan = QualityPreservationEngine.createPreservationPlan({
+        originalDimensions: dims,
+        sourceMime: mime,
+        targetFormat: state.options.format,
+        resize: state.options.resize,
+        allowUpscale: state.options.resize?.allowUpscale,
+      });
+
+      const targetDims = plan.safeDimensions;
+      const targetFormat = plan.targetFormat;
 
       const isSolver = state.options.mode === 'targetSize' && !!state.options.targetBytes;
       if (isSolver) {
